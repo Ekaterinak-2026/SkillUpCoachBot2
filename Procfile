@@ -1,1 +1,1 @@
-worker: python main.py
+worker: rm -rf __pycache__ handlers/__pycache__ && python main.py
