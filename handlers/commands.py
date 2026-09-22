@@ -14,7 +14,6 @@ from core import (
     get_week_stats,
     update_user_skill,
     update_user_time,
-    reset_user,
     get_active_skills,
     get_archived_skills,
     get_skill_by_id,
@@ -24,6 +23,21 @@ from core import (
     restore_skill,
     MAX_SKILLS,
 )
+from core import get_db
+
+
+# Локальная функция — обходит баг кэша core.py
+async def reset_user(user_id: int) -> None:
+    """Полный сброс профиля пользователя."""
+    db = await get_db()
+    await db.execute("DELETE FROM daily_steps WHERE user_id = ?", (user_id,))
+    await db.execute("DELETE FROM skills WHERE user_id = ?", (user_id,))
+    await db.execute(
+        "UPDATE users SET skill = NULL, streak = 0, "
+        "best_streak = 0, total_success = 0 WHERE user_id = ?",
+        (user_id,)
+    )
+    await db.commit()
 from keyboards import (
     settings_keyboard,
     skills_keyboard,
@@ -237,7 +251,7 @@ async def cmd_reset(message: Message) -> None:
     user_id = message.from_user.id
     user = await get_user(user_id)
 
-    if not user or not user.get("skill"):
+    if not user:
         await message.answer(texts.NOT_REGISTERED)
         return
 
