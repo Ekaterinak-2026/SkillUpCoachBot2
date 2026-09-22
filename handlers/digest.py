@@ -8,7 +8,7 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
-from db import get_user, get_week_stats
+from core import get_user, get_week_stats
 import texts
 
 router = Router()

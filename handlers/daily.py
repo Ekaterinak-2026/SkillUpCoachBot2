@@ -10,7 +10,7 @@ from aiogram.fsm.context import FSMContext
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from db import (
+from core import (
     get_user,
     save_daily_plan,
     save_daily_plan_for_skill,

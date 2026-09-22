@@ -1,3 +1,5 @@
+
+# v2 rebuild 2026-09-22 — cache buster
 FROM python:3.11-slim
 
 WORKDIR /app
