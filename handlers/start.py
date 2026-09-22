@@ -16,7 +16,7 @@ from keyboards import (
     timezone_keyboard,
     add_more_skills_keyboard,
 )
-from database import (
+from db import (
     add_user,
     get_user,
     update_user_skill,

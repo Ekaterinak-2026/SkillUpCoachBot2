@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo
 from aiogram import Bot
 
 import random
-from database import (
+from db import (
     get_all_users,
     get_today_plan,
     get_week_stats,
