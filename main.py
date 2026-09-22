@@ -11,7 +11,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommand
 
 from config import BOT_TOKEN
-from database import init_db
+from db import init_db
+# v2.0 import fix
 from scheduler import setup_scheduler, shutdown_scheduler
 
 # Импортируем роутеры из handlers
