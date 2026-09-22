@@ -2,6 +2,7 @@
 Работа с базой данных SQLite.
 Используем глобальное соединение + WAL для стабильной работы в контейнерах.
 """
+# SkillUp Coach v2.0 — force rebuild
 
 import aiosqlite
 from datetime import datetime, timedelta
