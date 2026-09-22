@@ -17,7 +17,6 @@ from core import (
     get_today_plan,
     get_all_today_plans,
     update_step_status,
-    update_step_status_by_skill,
     mark_step_done,
     mark_step_failed,
     get_active_skills,
@@ -28,6 +27,19 @@ from keyboards import (
     start_choice_keyboard,
 )
 import texts
+
+# Локальная функция — обходит баг импорта из core
+async def update_step_status_by_skill(user_id: int, skill_id: int, status: str) -> None:
+    from datetime import datetime as _dt
+    from core import get_db
+    today = _dt.now().strftime("%Y-%m-%d")
+    db = await get_db()
+    await db.execute(
+        "UPDATE daily_steps SET status = ? "
+        "WHERE user_id = ? AND skill_id = ? AND date = ?",
+        (status, user_id, skill_id, today)
+    )
+    await db.commit()
 
 router = Router()
 
