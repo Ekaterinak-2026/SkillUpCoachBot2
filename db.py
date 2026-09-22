@@ -2,6 +2,7 @@
 Работа с базой данных SQLite.
 Используем глобальное соединение + WAL для стабильной работы в контейнерах.
 """
+# v3.0 — force rebuild
 # SkillUp Coach v2.0 — force rebuild
 
 import aiosqlite
