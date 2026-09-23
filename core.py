@@ -14,6 +14,8 @@ DB_DIR = "/app/data"
 os.makedirs(DB_DIR, exist_ok=True)
 DB_NAME = os.path.join(DB_DIR, "skillup.db")
 
+_db: aiosqlite.Connection | None = None
+
 async def _check_alive(db: aiosqlite.Connection) -> bool:
     """Проверяет, что соединение живое."""
     try:
