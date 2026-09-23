@@ -23,7 +23,6 @@ from core import (
     update_user_skill,
     update_user_time,
     update_user_timezone,
-    update_user_goal,
     add_skill,
     get_active_skills,
     count_active_skills,
@@ -33,7 +32,18 @@ import texts
 
 # Роутер для этого файла
 router = Router()
+from core import get_db
 
+
+# Локальная функция — обходит баг кэша core.py
+async def update_user_goal(user_id: int, goal: str) -> None:
+    """Сохраняет сегмент ЦА пользователя."""
+    db = await get_db()
+    await db.execute(
+        "UPDATE users SET goal = ? WHERE user_id = ?",
+        (goal, user_id)
+    )
+    await db.commit()
 
 # ============ СОСТОЯНИЯ (FSM) ============
 
@@ -175,7 +185,7 @@ async def process_goal_choice(callback: CallbackQuery, state: FSMContext) -> Non
     )
     await state.set_state(Onboarding.choosing_skill)
     await callback.answer()
-    
+
 @router.callback_query(F.data.startswith("skill:"), Onboarding.choosing_skill)
 async def process_skill_choice(callback: CallbackQuery, state: FSMContext) -> None:
     """Пользователь выбрал навык из списка — сохраняем и предлагаем добавить ещё."""
