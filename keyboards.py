@@ -277,3 +277,7 @@ def goals_keyboard() -> InlineKeyboardMarkup:
     builder.button(text="🧠 Углубляю экспертизу", callback_data="goal:expertise")
     builder.adjust(1)
     return builder.as_markup()
+# Алиас для обратной совместимости (используется в commands.py)
+def skills_keyboard() -> InlineKeyboardMarkup:
+    """Старая функция — оставлена для совместимости с commands.py."""
+    return skills_keyboard_beginner()
