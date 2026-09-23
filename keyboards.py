@@ -198,3 +198,14 @@ def archive_confirm_keyboard(skill_id: int) -> InlineKeyboardMarkup:
     builder.button(text="❌ Отмена", callback_data="skills:menu")
     builder.adjust(1)
     return builder.as_markup()
+# ============ СЕГМЕНТЫ ЦА (выбор цели) ============
+
+def goals_keyboard() -> InlineKeyboardMarkup:
+    """Кнопки выбора сегмента — что тебя привело."""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🔄 Только начинаю в IT", callback_data="goal:start_it")
+    builder.button(text="🎯 Готовлюсь к собесу", callback_data="goal:interview")
+    builder.button(text="📈 Хочу поднять грейд", callback_data="goal:upgrade")
+    builder.button(text="🧠 Углубляю экспертизу", callback_data="goal:expertise")
+    builder.adjust(1)
+    return builder.as_markup()
