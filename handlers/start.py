@@ -243,6 +243,7 @@ async def process_skill_choice(callback: CallbackQuery, state: FSMContext) -> No
                 await count_active_skills(user_id), MAX_SKILLS
             )
         )
+        await state.set_state(Onboarding.adding_more_skills)
         await callback.answer()
         return
 
@@ -251,6 +252,7 @@ async def process_skill_choice(callback: CallbackQuery, state: FSMContext) -> No
             texts.MAX_SKILLS_REACHED,
             reply_markup=add_more_skills_keyboard(MAX_SKILLS, MAX_SKILLS)
         )
+        await state.set_state(Onboarding.adding_more_skills)
         await callback.answer()
         return
 
@@ -284,6 +286,7 @@ async def process_custom_skill(message: Message, state: FSMContext) -> None:
                 await count_active_skills(user_id), MAX_SKILLS
             )
         )
+        await state.set_state(Onboarding.adding_more_skills)
         return
 
     if result == -1:
@@ -291,8 +294,8 @@ async def process_custom_skill(message: Message, state: FSMContext) -> None:
             texts.MAX_SKILLS_REACHED,
             reply_markup=add_more_skills_keyboard(MAX_SKILLS, MAX_SKILLS)
         )
+        await state.set_state(Onboarding.adding_more_skills)
         return
-
     skills = await get_active_skills(user_id)
     skills_list = ", ".join([s["name"] for s in skills])
 
