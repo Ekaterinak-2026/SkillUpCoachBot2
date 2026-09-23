@@ -87,26 +87,26 @@ async def cmd_stats(message: Message) -> None:
 
     stats = await get_user_stats(user_id)
     current_streak = await get_current_streak(user_id)
-    done_dates = await get_activity_dates(user_id, days=56)
+    done_dates = await get_activity_dates(user_id, days=42)
     skill_stats = await get_skill_stats(user_id)
 
-    # Календарь: 7 строк по дням недели × 8 колонок (недель)
+    # Календарь: 6 недель × 7 дней (Пн-Вс), читаемые моноширинные символы
     today = datetime.now().date()
     monday = today - timedelta(days=today.weekday())
-    start_monday = monday - timedelta(weeks=7)
+    start_monday = monday - timedelta(weeks=5)  # 6 недель: текущая + 5 назад
 
     day_names = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
     lines = []
     for d in range(7):
         row = day_names[d] + " "
-        for w in range(8):
+        for w in range(6):
             day = start_monday + timedelta(weeks=w, days=d)
             if day > today:
-                row += "⬛"
+                row += "·"
             elif day.strftime("%Y-%m-%d") in done_dates:
-                row += "🟩"
+                row += "█"
             else:
-                row += "⬜"
+                row += "·"
         lines.append(row)
     calendar = "<code>" + "\n".join(lines) + "</code>"
 
