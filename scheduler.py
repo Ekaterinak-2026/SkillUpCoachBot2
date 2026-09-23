@@ -16,6 +16,7 @@ from core import (
     get_all_users,
     get_today_plan,
     get_week_stats,
+    get_week_stats_by_skill,
     days_since_last_activity,
     get_active_skills,
     get_all_today_plans,
@@ -138,15 +139,24 @@ async def check_digest(bot: Bot) -> None:
             continue
 
         stats = await get_week_stats(user["user_id"])
+        skill_stats = await get_week_stats_by_skill(user["user_id"])
+
+        max_total = len(skill_stats) * 7
+        if skill_stats:
+            skills_text = "\n".join([
+                f"• {s['name']} — {s['done']}/7 | {s['favorite_type']}"
+                for s in skill_stats
+            ])
+        else:
+            skills_text = "— пока нет активных навыков"
 
         text = texts.DIGEST_HEADER.format(name=user.get("username") or "друг")
         text += texts.DIGEST_BODY.format(
-            skill=user["skill"],
-            done=stats["done_count"],
+            done_total=stats["done_count"],
+            max_total=max_total,
             best_streak=user["best_streak"],
-            favorite_type=stats["favorite_type"],
-            favorite_count=stats["favorite_count"],
-            total=user["total_success"]
+            total=user["total_success"],
+            skills_text=skills_text,
         )
 
         if user["best_streak"] >= 5:
@@ -160,8 +170,6 @@ async def check_digest(bot: Bot) -> None:
             await bot.send_message(user["user_id"], text)
         except Exception as e:
             print(f"Ошибка дайджеста {user['user_id']}: {e}")
-
-
 
 # ============ ПОДБАДРИВАЮЩИЕ СООБЩЕНИЯ ============
 

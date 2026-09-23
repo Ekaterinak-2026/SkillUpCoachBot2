@@ -271,33 +271,40 @@ async def mark_step_failed(user_id: int) -> dict:
         return dict(row) if row else {}
 
 
-async def get_week_stats(user_id: int) -> dict:
+async def get_week_stats_by_skill(user_id: int) -> list[dict]:
+    """Статистика за последние 7 дней по каждому активному навыку."""
     week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+    skills = await get_active_skills(user_id)
     db = await get_db()
+    result = []
 
-    async with db.execute(
-        "SELECT COUNT(*) as cnt FROM daily_steps "
-        "WHERE user_id = ? AND status = 'выполнен' AND date >= ?",
-        (user_id, week_ago)
-    ) as cursor:
-        row = await cursor.fetchone()
-        done_count = row["cnt"] if row else 0
+    for s in skills:
+        async with db.execute(
+            "SELECT COUNT(*) as cnt FROM daily_steps "
+            "WHERE user_id = ? AND skill_id = ? AND status = 'выполнен' AND date >= ?",
+            (user_id, s["id"], week_ago)
+        ) as cur:
+            row = await cur.fetchone()
+            done = row["cnt"] if row else 0
 
-    async with db.execute(
-        "SELECT step_type, COUNT(*) as cnt FROM daily_steps "
-        "WHERE user_id = ? AND status = 'выполнен' AND date >= ? "
-        "GROUP BY step_type ORDER BY cnt DESC LIMIT 1",
-        (user_id, week_ago)
-    ) as cursor:
-        row = await cursor.fetchone()
-        favorite_type = row["step_type"] if row else "—"
-        favorite_count = row["cnt"] if row else 0
+        async with db.execute(
+            "SELECT step_type, COUNT(*) as cnt FROM daily_steps "
+            "WHERE user_id = ? AND skill_id = ? AND status = 'выполнен' AND date >= ? "
+            "GROUP BY step_type ORDER BY cnt DESC LIMIT 1",
+            (user_id, s["id"], week_ago)
+        ) as cur:
+            row = await cur.fetchone()
+            fav_type = row["step_type"] if row else "—"
+            fav_count = row["cnt"] if row else 0
 
-    return {
-        "done_count": done_count,
-        "favorite_type": favorite_type,
-        "favorite_count": favorite_count,
-    }
+        result.append({
+            "name": s["name"],
+            "done": done,
+            "favorite_type": fav_type,
+            "favorite_count": fav_count,
+        })
+
+    return result
 
 async def get_user_stats(user_id: int) -> dict:
     """Общая статистика: активные навыки, выполненные шаги, лучшая серия."""

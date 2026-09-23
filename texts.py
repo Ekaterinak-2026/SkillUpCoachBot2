@@ -110,11 +110,11 @@ STEP_SKIPPED = "👌 Ок, пропускаем. Завтра новый ден�
 DIGEST_HEADER = "📬 Твоя неделя, {name}:\n"
 
 DIGEST_BODY = (
-    "\n🎯 Навык: {skill}\n"
-    "✅ Выполнено шагов: {done} из 7\n"
+    "\n✅ Выполнено шагов за неделю: {done_total} из {max_total}\n"
     "🔥 Лучшая серия: {best_streak} дней\n"
-    "📚 Любимый формат шага: {favorite_type} ({favorite_count} раз)\n"
-    "⭐ Всего звёзд: {total}\n"
+    "⭐ Всего звёзд: {total}\n\n"
+    "🎯 По навыкам:\n"
+    "{skills_text}\n"
 )
 
 DIGEST_TIP_MORE_PRACTICE = (
