@@ -9,6 +9,7 @@ from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
 from datetime import datetime
 from zoneinfo import ZoneInfo
+import asyncio
 
 from core import (
     get_user,
@@ -59,6 +60,29 @@ def _get_greeting(tz_name: str | None) -> str:
         return "🌆 Добрый вечер! Выбери шаг на сегодня."
     else:
         return "🌙 Поздновато, но никогда не поздно. Какой шаг выберешь?"
+async def _send_late_evening(bot, user_id: int, delay: int = 3600) -> None:
+    """Догоняющий чекап: отправляет вечерний вопрос через delay секунд."""
+    await asyncio.sleep(delay)
+
+    plans = await get_all_today_plans(user_id)
+    pending = [p for p in plans if p["status"] == "запланирован"]
+    if not pending:
+        return
+
+    first = pending[0]
+    skill_name = first.get("skill_name") or "навык"
+    text = (
+        "🌙 Пришло время чекапа.\n\n"
+        f"📌 {skill_name} — {first['step_type']}. Получилось?"
+    )
+    try:
+        await bot.send_message(
+            user_id,
+            text,
+            reply_markup=evening_check_keyboard(first["skill_id"])
+        )
+    except Exception as e:
+        print(f"Ошибка догоняющего чекапа {user_id}: {e}")   
 
 # ============ УТРО: ВЫБОР ТИПА ШАГА ============
 
@@ -126,6 +150,21 @@ async def process_morning_step(callback: CallbackQuery, state: FSMContext) -> No
 
         await callback.message.edit_text("\n".join(lines))
         await state.clear()
+
+        # Догоняющий чекап, если уже позже evening_time
+        user = await get_user(user_id)
+        if user:
+            from zoneinfo import ZoneInfo
+            try:
+                tz = ZoneInfo(user.get("timezone") or "Europe/Moscow")
+            except Exception:
+                tz = ZoneInfo("Europe/Moscow")
+            current_hm = datetime.now(tz).strftime("%H:%M")
+            evening_time = user.get("evening_time") or "20:00"
+            if current_hm >= evening_time:
+                asyncio.create_task(
+                    _send_late_evening(callback.bot, user_id, delay=3600)
+                )
 
     await callback.answer()
 
