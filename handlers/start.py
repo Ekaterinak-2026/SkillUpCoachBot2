@@ -121,9 +121,13 @@ async def process_add_more(callback: CallbackQuery, state: FSMContext) -> None:
         await callback.answer("Достигнут максимум навыков", show_alert=True)
         return
 
-        await callback.message.edit_text(
-        text,
-        reply_markup=skills_keyboard_by_goal(goal)
+    # Получаем цель пользователя, чтобы показать правильный набор навыков
+    user = await get_user(user_id)
+    user_goal = user.get("goal", "start_it") if user else "start_it"
+
+    await callback.message.edit_text(
+        "Какой навык хочешь добавить ещё?",
+        reply_markup=skills_keyboard_by_goal(user_goal)
     )
     await state.set_state(Onboarding.choosing_skill)
     await callback.answer()
