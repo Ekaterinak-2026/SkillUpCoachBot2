@@ -299,7 +299,127 @@ async def get_week_stats(user_id: int) -> dict:
         "favorite_count": favorite_count,
     }
 
+async def get_user_stats(user_id: int) -> dict:
+    """Общая статистика: активные навыки, выполненные шаги, лучшая серия."""
+    db = await get_db()
 
+    async with db.execute(
+        "SELECT COUNT(*) as cnt FROM daily_steps "
+        "WHERE user_id = ? AND status = 'выполнен'",
+        (user_id,)
+    ) as cur:
+        row = await cur.fetchone()
+        total_done = row["cnt"] if row else 0
+
+    active = await count_active_skills(user_id)
+
+    async with db.execute(
+        "SELECT best_streak, total_success FROM users WHERE user_id = ?",
+        (user_id,)
+    ) as cur:
+        row = await cur.fetchone()
+        best_streak = row["best_streak"] if row else 0
+        total_success = row["total_success"] if row else 0
+
+    return {
+        "total_done": total_done,
+        "active_count": active,
+        "best_streak": best_streak,
+        "total_success": total_success,
+    }
+
+
+async def get_current_streak(user_id: int) -> int:
+    """Текущая серия: подряд идущие дни с хотя бы одним выполненным шагом."""
+    db = await get_db()
+    async with db.execute(
+        "SELECT DISTINCT date FROM daily_steps "
+        "WHERE user_id = ? AND status = 'выполнен' ORDER BY date DESC",
+        (user_id,)
+    ) as cur:
+        rows = await cur.fetchall()
+
+    if not rows:
+        return 0
+
+    dates = [r["date"] for r in rows]
+    today = datetime.now().strftime("%Y-%m-%d")
+    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    if dates[0] not in (today, yesterday):
+        return 0
+
+    streak = 0
+    check = datetime.strptime(dates[0], "%Y-%m-%d")
+    for d in dates:
+        d_dt = datetime.strptime(d, "%Y-%m-%d")
+        if d_dt == check:
+            streak += 1
+            check -= timedelta(days=1)
+        elif d_dt < check:
+            break
+    return streak
+
+
+async def get_activity_dates(user_id: int, days: int = 56) -> set:
+    """Множество дат (YYYY-MM-DD) с выполненными шагами за последние N дней."""
+    start = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+    db = await get_db()
+    async with db.execute(
+        "SELECT DISTINCT date FROM daily_steps "
+        "WHERE user_id = ? AND status = 'выполнен' AND date >= ?",
+        (user_id, start)
+    ) as cur:
+        rows = await cur.fetchall()
+    return {r["date"] for r in rows}
+
+
+async def get_skill_stats(user_id: int) -> list[dict]:
+    """По каждому активному навыку: серия и % за 30 дней."""
+    skills = await get_active_skills(user_id)
+    db = await get_db()
+    thirty_ago = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+    today = datetime.now().strftime("%Y-%m-%d")
+    yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    result = []
+    for s in skills:
+        async with db.execute(
+            "SELECT DISTINCT date FROM daily_steps "
+            "WHERE user_id = ? AND skill_id = ? AND status = 'выполнен' "
+            "ORDER BY date DESC",
+            (user_id, s["id"])
+        ) as cur:
+            dates = [r["date"] for r in await cur.fetchall()]
+
+        streak = 0
+        if dates and dates[0] in (today, yesterday):
+            check = datetime.strptime(dates[0], "%Y-%m-%d")
+            for d in dates:
+                d_dt = datetime.strptime(d, "%Y-%m-%d")
+                if d_dt == check:
+                    streak += 1
+                    check -= timedelta(days=1)
+                elif d_dt < check:
+                    break
+
+        async with db.execute(
+            "SELECT COUNT(DISTINCT date) as cnt FROM daily_steps "
+            "WHERE user_id = ? AND skill_id = ? AND status = 'выполнен' AND date >= ?",
+            (user_id, s["id"], thirty_ago)
+        ) as cur:
+            row = await cur.fetchone()
+            done_30 = row["cnt"] if row else 0
+
+        percent = round(done_30 / 30 * 100)
+
+        result.append({
+            "name": s["name"],
+            "streak": streak,
+            "percent": percent,
+        })
+
+    return result
 async def days_since_last_activity(user_id: int) -> int:
     db = await get_db()
     async with db.execute(

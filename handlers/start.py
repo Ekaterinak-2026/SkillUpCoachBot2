@@ -70,17 +70,11 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
     user = await get_user(user_id)
     if user and user.get("skill"):
         # Пользователь уже настроен
+    
         await message.answer(
-            texts.ALREADY_REGISTERED + "\n\n" +
-            texts.STATS.format(
-                name=username,
-                skill=user["skill"],
-                streak=user["streak"],
-                best_streak=user["best_streak"],
-                total=user["total_success"],
-                week_done=0,  # позже посчитаем точно
-            )
-        )
+    texts.ALREADY_REGISTERED + "\n\n"
+    "Посмотри /stats для подробной статистики или /settings для настроек."
+)
         return
 
     # Новый пользователь — начинаем онбординг с выбора сегмента
