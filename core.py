@@ -104,6 +104,12 @@ async def init_db() -> None:
     except Exception:
         pass
 
+    # Миграция: добавляем колонку goal, если её нет
+    try:
+        await db.execute("ALTER TABLE users ADD COLUMN goal TEXT")
+    except Exception:
+        pass
+
     await db.commit()
     await _migrate_user_skills()
 
