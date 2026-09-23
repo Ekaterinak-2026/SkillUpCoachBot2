@@ -9,18 +9,71 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 # ============ ОНБОРДИНГ ============
 
-def skills_keyboard() -> InlineKeyboardMarkup:
-    """Кнопки выбора навыка на старте."""
+# ============ ДИНАМИЧЕСКИЕ КЛАВИАТУРЫ НАВЫКОВ ============
+
+def skills_keyboard_beginner() -> InlineKeyboardMarkup:
+    """Навыки для тех, кто только начинает в IT."""
     builder = InlineKeyboardBuilder()
-    builder.button(text="Python", callback_data="skill:Python")
-    builder.button(text="Java", callback_data="skill:Java")
-    builder.button(text="SQL", callback_data="skill:SQL")
-    builder.button(text="Английский", callback_data="skill:Английский")
-    builder.button(text="System Design", callback_data="skill:System Design")
-    builder.button(text="Другое", callback_data="skill:other")
-    builder.adjust(2)  # по 2 кнопки в ряд
+    builder.button(text="🐍 Python", callback_data="skill:Python")
+    builder.button(text="🟨 JavaScript", callback_data="skill:JavaScript")
+    builder.button(text="🗄 SQL", callback_data="skill:SQL")
+    builder.button(text="🎨 Figma", callback_data="skill:Figma")
+    builder.button(text="🗣 IT-английский", callback_data="skill:IT-английский")
+    builder.button(text="🤝 Soft Skills", callback_data="skill:Soft Skills")
+    builder.button(text="📝 Другое", callback_data="skill:other")
+    builder.adjust(2)
     return builder.as_markup()
 
+
+def skills_keyboard_interview() -> InlineKeyboardMarkup:
+    """Навыки для подготовки к собеседованию."""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🧮 Алгоритмы", callback_data="skill:Алгоритмы")
+    builder.button(text="🏗 System Design", callback_data="skill:System Design")
+    builder.button(text="🐍 Python", callback_data="skill:Python")
+    builder.button(text="🗄 SQL", callback_data="skill:SQL")
+    builder.button(text="📁 Кейсы", callback_data="skill:Кейсы")
+    builder.button(text="📝 Другое", callback_data="skill:other")
+    builder.adjust(2)
+    return builder.as_markup()
+
+
+def skills_keyboard_upgrade() -> InlineKeyboardMarkup:
+    """Навыки для тех, кто хочет поднять грейд."""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🏗 System Design", callback_data="skill:System Design")
+    builder.button(text="🧠 Архитектура", callback_data="skill:Архитектура")
+    builder.button(text="🤝 Soft Skills", callback_data="skill:Soft Skills")
+    builder.button(text="📊 Управление проектами", callback_data="skill:Управление проектами")
+    builder.button(text="🗣 Английский", callback_data="skill:Английский")
+    builder.button(text="📝 Другое", callback_data="skill:other")
+    builder.adjust(2)
+    return builder.as_markup()
+
+
+def skills_keyboard_expertise() -> InlineKeyboardMarkup:
+    """Навыки для углубления экспертизы."""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🐍 Углублённый Python", callback_data="skill:Углублённый Python")
+    builder.button(text="🤖 ML / Data Science", callback_data="skill:ML / Data Science")
+    builder.button(text="🗄 Базы данных", callback_data="skill:Базы данных")
+    builder.button(text="🧮 Алгоритмы", callback_data="skill:Алгоритмы")
+    builder.button(text="🏗 System Design", callback_data="skill:System Design")
+    builder.button(text="📝 Другое", callback_data="skill:other")
+    builder.adjust(2)
+    return builder.as_markup()
+
+
+def skills_keyboard_by_goal(goal: str) -> InlineKeyboardMarkup:
+    """Универсальная функция: возвращает нужную клавиатуру по цели."""
+    mapping = {
+        "start_it": skills_keyboard_beginner,
+        "interview": skills_keyboard_interview,
+        "upgrade": skills_keyboard_upgrade,
+        "expertise": skills_keyboard_expertise,
+    }
+    builder_func = mapping.get(goal, skills_keyboard_beginner)
+    return builder_func()
 
 def time_setup_keyboard() -> InlineKeyboardMarkup:
     """Кнопки настройки времени уведомлений."""
@@ -158,14 +211,18 @@ def skills_menu_keyboard(has_active: bool, has_archived: bool) -> InlineKeyboard
 
 
 def skills_add_keyboard() -> InlineKeyboardMarkup:
-    """Список навыков для добавления из /skills (отдельные callback_data)."""
+    """Список навыков для добавления из /skills."""
     builder = InlineKeyboardBuilder()
-    builder.button(text="Python", callback_data="skill_add:Python")
-    builder.button(text="Java", callback_data="skill_add:Java")
-    builder.button(text="SQL", callback_data="skill_add:SQL")
-    builder.button(text="Английский", callback_data="skill_add:Английский")
-    builder.button(text="System Design", callback_data="skill_add:System Design")
-    builder.button(text="Другое", callback_data="skill_add:other")
+    builder.button(text="🐍 Python", callback_data="skill_add:Python")
+    builder.button(text="🟨 JavaScript", callback_data="skill_add:JavaScript")
+    builder.button(text="🗄 SQL", callback_data="skill_add:SQL")
+    builder.button(text="🎨 Figma", callback_data="skill_add:Figma")
+    builder.button(text="🧮 Алгоритмы", callback_data="skill_add:Алгоритмы")
+    builder.button(text="🏗 System Design", callback_data="skill_add:System Design")
+    builder.button(text="🗣 IT-английский", callback_data="skill_add:IT-английский")
+    builder.button(text="🤝 Soft Skills", callback_data="skill_add:Soft Skills")
+    builder.button(text="📁 Кейсы", callback_data="skill_add:Кейсы")
+    builder.button(text="📝 Другое", callback_data="skill_add:other")
     builder.button(text="← Назад", callback_data="skills:menu")
     builder.adjust(2)
     return builder.as_markup()

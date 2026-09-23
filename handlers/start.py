@@ -10,7 +10,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 from keyboards import (
-    skills_keyboard,
+    skills_keyboard_by_goal,
     time_setup_keyboard,
     start_choice_keyboard,
     timezone_keyboard,
@@ -121,9 +121,9 @@ async def process_add_more(callback: CallbackQuery, state: FSMContext) -> None:
         await callback.answer("Достигнут максимум навыков", show_alert=True)
         return
 
-    await callback.message.edit_text(
-        "Какой навык хочешь добавить ещё?",
-        reply_markup=skills_keyboard()
+        await callback.message.edit_text(
+        text,
+        reply_markup=skills_keyboard_by_goal(goal)
     )
     await state.set_state(Onboarding.choosing_skill)
     await callback.answer()
@@ -218,7 +218,7 @@ async def process_goal_choice(callback: CallbackQuery, state: FSMContext) -> Non
 
     await callback.message.edit_text(
         text,
-        reply_markup=skills_keyboard()
+        reply_markup=skills_keyboard_by_goal(goal)
     )
     await state.set_state(Onboarding.choosing_skill)
     await callback.answer()
