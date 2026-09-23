@@ -5,14 +5,14 @@
 # v3.0 — force rebuild
 # SkillUp Coach v2.0 — force rebuild
 
+import os
 import aiosqlite
 from datetime import datetime, timedelta
 from typing import Optional
 
-DB_NAME = "skillup.db"
-
-_db: aiosqlite.Connection | None = None
-
+DB_DIR = "/app/data"
+os.makedirs(DB_DIR, exist_ok=True)
+DB_NAME = os.path.join(DB_DIR, "skillup.db")
 
 async def _check_alive(db: aiosqlite.Connection) -> bool:
     """Проверяет, что соединение живое."""
