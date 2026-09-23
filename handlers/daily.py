@@ -3,7 +3,7 @@
 - Утро: пользователь выбирает тип шага
 - Вечер: пользователь отмечает выполнение
 """
-
+from zoneinfo import ZoneInfo
 from aiogram import Router, F
 from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
@@ -42,7 +42,23 @@ async def update_step_status_by_skill(user_id: int, skill_id: int, status: str) 
     await db.commit()
 
 router = Router()
+def _get_greeting(tz_name: str | None) -> str:
+    """Возвращает приветствие в зависимости от локального времени пользователя."""
+    try:
+        tz = ZoneInfo(tz_name or "Europe/Moscow")
+    except Exception:
+        tz = ZoneInfo("Europe/Moscow")
 
+    hour = datetime.now(tz).hour
+
+    if 5 <= hour < 12:
+        return "☀️ Доброе утро! Выбери шаг на сегодня."
+    elif 12 <= hour < 18:
+        return "🌤 Добрый день! Выбери шаг на сегодня."
+    elif 18 <= hour < 23:
+        return "🌆 Добрый вечер! Выбери шаг на сегодня."
+    else:
+        return "🌙 Поздновато, но никогда не поздно. Какой шаг выберешь?"
 
 # ============ УТРО: ВЫБОР ТИПА ШАГА ============
 
@@ -82,19 +98,21 @@ async def process_morning_step(callback: CallbackQuery, state: FSMContext) -> No
             next_skill = s
             break
 
-    if next_skill:
+        if next_skill:
         # Формируем сообщение с уже выбранными + следующим
-        lines = ["☀️ Доброе утро! Выбери шаг на сегодня.", ""]
-        for s in skills:
-            if str(s["id"]) in chosen:
-                lines.append(f"✅ {s['name']} — {chosen[str(s['id'])]}")
-        lines.append("")
-        lines.append(f"📌 {next_skill['name']}:")
+            user = await get_user(user_id)
+            greeting = _get_greeting(user.get("timezone") if user else None)
+            lines = [greeting, ""]
+            for s in skills:
+                if str(s["id"]) in chosen:
+                    lines.append(f"✅ {s['name']} — {chosen[str(s['id'])]}")
+            lines.append("")
+            lines.append(f"📌 {next_skill['name']}:")
 
-        await callback.message.edit_text(
-            "\n".join(lines),
-            reply_markup=step_type_keyboard(next_skill["id"])
-        )
+            await callback.message.edit_text(
+                "\n".join(lines),
+                reply_markup=step_type_keyboard(next_skill["id"])
+            )
     else:
         # Все навыки пройдены — сохраняем в БД
         for sid_str, st in chosen.items():
