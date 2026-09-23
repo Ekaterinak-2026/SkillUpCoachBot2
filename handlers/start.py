@@ -15,6 +15,7 @@ from keyboards import (
     start_choice_keyboard,
     timezone_keyboard,
     add_more_skills_keyboard,
+    goals_keyboard,
 )
 from core import (
     add_user,
@@ -22,6 +23,7 @@ from core import (
     update_user_skill,
     update_user_time,
     update_user_timezone,
+    update_user_goal,
     add_skill,
     get_active_skills,
     count_active_skills,
@@ -36,6 +38,7 @@ router = Router()
 # ============ СОСТОЯНИЯ (FSM) ============
 
 class Onboarding(StatesGroup):
+    choosing_goal = State()
     choosing_skill = State()
     entering_custom_skill = State()
     adding_more_skills = State()
@@ -70,13 +73,13 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
         )
         return
 
-    # Новый пользователь — начинаем онбординг
-    await state.set_state(Onboarding.choosing_skill)
+    # Новый пользователь — начинаем онбординг с выбора сегмента
+    await message.answer(texts.WELCOME)
+    await state.set_state(Onboarding.choosing_goal)
     await message.answer(
-        texts.WELCOME,
-        reply_markup=skills_keyboard()
+        texts.CHOOSE_GOAL,
+        reply_markup=goals_keyboard()
     )
-
 
 # ============ ВЫБОР НАВЫКА ============
 @router.callback_query(F.data == "onb:add_more", Onboarding.adding_more_skills)
@@ -144,7 +147,35 @@ async def process_timezone_choice(callback: CallbackQuery, state: FSMContext) ->
     # НЕ меняем состояние — оставляем choosing_timezone, чтобы
     # пользователь мог нажать «Оставить по умолчанию» или «Настроить»
     await callback.answer()
+# ============ ВЫБОР СЕГМЕНТА ЦА ============
 
+@router.callback_query(F.data.startswith("goal:"), Onboarding.choosing_goal)
+async def process_goal_choice(callback: CallbackQuery, state: FSMContext) -> None:
+    """Пользователь выбрал сегмент — сохраняем и показываем текст."""
+    goal = callback.data.split(":", 1)[1]
+    user_id = callback.from_user.id
+
+    # Сохраняем сегмент в БД
+    await update_user_goal(user_id, goal)
+
+    # Тексты для каждого сегмента
+    goal_texts = {
+        "start_it": texts.GOAL_START_IT,
+        "interview": texts.GOAL_INTERVIEW,
+        "upgrade": texts.GOAL_UPGRADE,
+        "expertise": texts.GOAL_EXPERTISE,
+    }
+
+    text = goal_texts.get(goal, texts.GOAL_START_IT)
+    text += "\n\n" + texts.SKILLS_PROMPT
+
+    await callback.message.edit_text(
+        text,
+        reply_markup=skills_keyboard()
+    )
+    await state.set_state(Onboarding.choosing_skill)
+    await callback.answer()
+    
 @router.callback_query(F.data.startswith("skill:"), Onboarding.choosing_skill)
 async def process_skill_choice(callback: CallbackQuery, state: FSMContext) -> None:
     """Пользователь выбрал навык из списка — сохраняем и предлагаем добавить ещё."""
