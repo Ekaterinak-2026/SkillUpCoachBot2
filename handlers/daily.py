@@ -264,7 +264,7 @@ async def process_start_now(callback: CallbackQuery, state: FSMContext) -> None:
 
     first = skills[0]
     text = (
-        "☀️ Отлично! Начнём прямо сейчас.\n\n"
+        "Отлично! Начнём прямо сейчас.\n\n"
         f"📌 {first['name']}:"
     )
     await callback.message.edit_text(
