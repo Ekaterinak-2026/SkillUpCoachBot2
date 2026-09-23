@@ -103,7 +103,6 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
         "💪 Это инвестиция в твою карьеру. Давай начнём!"
     )
     await message.answer(welcome_text)
-    await message.answer(welcome_text)
     
     await state.set_state(Onboarding.choosing_goal)
     await message.answer(
