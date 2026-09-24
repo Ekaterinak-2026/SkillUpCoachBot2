@@ -63,6 +63,11 @@ class SettingsStates(StatesGroup):
     changing_morning = State()
     changing_evening = State()
     changing_skill = State()
+
+class FeedbackStates(StatesGroup):
+    """Состояние для команды /feedback."""
+    waiting_message = State()
+
 class SkillsStates(StatesGroup):
     """Состояния для команды /skills."""
     adding_custom = State()
@@ -671,3 +676,52 @@ async def cb_admin_stats_refresh(callback: CallbackQuery) -> None:
         reply_markup=admin_stats_keyboard()
     )
     await callback.answer("Обновлено")
+    # ============ ОБРАТНАЯ СВЯЗЬ ============
+
+@router.message(Command("feedback"))
+async def cmd_feedback(message: Message, state: FSMContext) -> None:
+    """Запрашивает у пользователя текст обратной связи."""
+    await state.set_state(FeedbackStates.waiting_message)
+    await message.answer(
+        "💬 Напиши своё сообщение — я передам его разработчику.\n\n"
+        "Это может быть:\n"
+        "• предложение по улучшению\n"
+        "• баг или ошибка\n"
+        "• вопрос по работе бота\n\n"
+        "Напиши текст одним сообщением:"
+    )
+
+
+@router.message(FeedbackStates.waiting_message, ~F.text.startswith("/"))
+async def process_feedback(message: Message, state: FSMContext, bot) -> None:
+    """Пересылает сообщение пользователя админу."""
+    user = message.from_user
+    text = message.text.strip()[:2000]
+
+    # Шлём админу
+    admin_text = (
+        f"📬 <b>Новое сообщение от пользователя</b>\n\n"
+        f"👤 Имя: {user.first_name or '—'}\n"
+        f"🆔 ID: <code>{user.id}</code>\n"
+        f"📛 Username: @{user.username}" if user.username else f"📛 Username: —\n\n"
+        f"💬 <b>Сообщение:</b>\n{text}"
+    )
+
+    # Собираем корректно
+    admin_text = (
+        f"📬 <b>Новое сообщение от пользователя</b>\n\n"
+        f"👤 Имя: {user.first_name or '—'}\n"
+        f"🆔 ID: <code>{user.id}</code>\n"
+        f"📛 Username: @{user.username if user.username else '—'}\n\n"
+        f"💬 <b>Сообщение:</b>\n{text}"
+    )
+
+    try:
+        await bot.send_message(ADMIN_ID, admin_text, parse_mode="HTML")
+        await message.answer("✅ Спасибо! Передал разработчику. Обратная связь очень помогает 💙")
+    except Exception as e:
+        await message.answer("⚠️ Не получилось отправить. Попробуй позже.")
+        import logging
+        logging.getLogger(__name__).error(f"Ошибка feedback: {e}")
+
+    await state.clear()
