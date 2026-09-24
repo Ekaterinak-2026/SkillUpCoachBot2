@@ -1,11 +1,15 @@
 """
-Единая картинка со статистикой и календарём (как Habit Otter).
-Всё в одном изображении — единый шрифт.
+Единая картинка со статистикой и календарём.
+Использует шрифт из matplotlib (гарантированно с кириллицей).
 """
 from io import BytesIO
 from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont
 import os
+import matplotlib
+
+# Путь к шрифтам из matplotlib (пип-пакет — всегда на месте)
+_FONT_DIR = os.path.join(matplotlib.get_data_path(), "fonts", "ttf")
 
 COLOR_DONE = "#4CAF50"
 COLOR_EMPTY = "#EBEDF0"
@@ -22,22 +26,13 @@ LABEL_WIDTH = 32
 
 
 def _get_font(size: int, bold: bool = False):
-    """Roboto (с fallback на DejaVu)."""
-    roboto_paths = [
-        f"/usr/share/fonts/truetype/roboto/unhinted/Roboto-{'Bold' if bold else 'Regular'}.ttf",
-        f"/usr/share/fonts/truetype/roboto/Roboto-{'Bold' if bold else 'Regular'}.ttf",
-        f"/usr/share/fonts/truetype/roboto/hinted/Roboto-{'Bold' if bold else 'Regular'}.ttf",
-    ]
-    dejavu_paths = [
-        f"/usr/share/fonts/truetype/dejavu/DejaVuSans{'-Bold' if bold else ''}.ttf",
-    ]
-    for path in roboto_paths + dejavu_paths:
-        if os.path.exists(path):
-            try:
-                return ImageFont.truetype(path, size)
-            except Exception:
-                continue
-    return ImageFont.load_default()
+    filename = "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf"
+    path = os.path.join(_FONT_DIR, filename)
+    try:
+        return ImageFont.truetype(path, size)
+    except Exception:
+        # fallback — стандартный DejaVu (без кириллицы в редких сборках)
+        return ImageFont.load_default()
 
 
 def render_stats(
@@ -50,7 +45,6 @@ def render_stats(
     best_streak: int = 0,
     skill_stats: list = None,
 ) -> BytesIO:
-    """Рисует ВСЮ статистику одной картинкой."""
     if skill_stats is None:
         skill_stats = []
 
@@ -59,27 +53,20 @@ def render_stats(
     font_small = _get_font(11)
     font_tiny = _get_font(10)
 
-    # Ширина
     cal_width = LABEL_WIDTH + weeks * (CELL_SIZE + CELL_GAP) - CELL_GAP
     width = PADDING * 2 + max(cal_width, 300)
 
-    # Высота — считаем заранее
+    # Высота
     y = PADDING
-    y += 26 + 12          # title
-    y += 22               # строка 1
-    y += 20               # строка 2
-    y += 20               # строка 3
-    y += 20               # строка 4
-    y += 20               # строка 5
+    y += 26 + 12
+    y += 22 + 20 + 20 + 20 + 20
     y += 16
-    y += 20               # "Активность по ..."
-    y += 8
-    y += 16               # месяцы сверху
-    y += 7 * (CELL_SIZE + CELL_GAP) - CELL_GAP   # календарь
+    y += 20 + 8
     y += 16
-    y += 20               # легенда
+    y += 7 * (CELL_SIZE + CELL_GAP) - CELL_GAP
     y += 16
-    y += 20               # "По навыкам:"
+    y += 20 + 16
+    y += 20
     y += max(len(skill_stats), 1) * 20
     height = y + PADDING
 
@@ -93,11 +80,11 @@ def render_stats(
 
     y = PADDING
 
-    # 1. Заголовок
+    # Заголовок
     draw.text((PADDING, y), "Твоя статистика", fill=COLOR_TITLE, font=font_title)
     y += 26 + 12
 
-    # 2. Метрики
+    # Метрики
     draw.text((PADDING, y), f"Активных навыков: {active_count}", fill=COLOR_TEXT, font=font_stat)
     y += 22
     draw.text((PADDING, y), f"Всего шагов: {total_done}", fill=COLOR_TEXT, font=font_stat)
@@ -109,11 +96,11 @@ def render_stats(
     draw.text((PADDING, y), f"Лучшая серия: {best_streak} дн.", fill=COLOR_TEXT, font=font_stat)
     y += 20 + 16
 
-    # 3. Активность
+    # Активность
     draw.text((PADDING, y), f"Активность по {period}", fill=COLOR_TITLE, font=font_stat)
     y += 20 + 8
 
-    # 4. Подписи месяцев
+    # Месяцы
     month_names = ["янв", "фев", "мар", "апр", "май", "июн",
                    "июл", "авг", "сен", "окт", "ноя", "дек"]
     last_month = None
@@ -126,13 +113,13 @@ def render_stats(
             last_month = week_start.month
     y += 16
 
-    # 5. Дни недели слева
+    # Дни недели
     day_labels = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
     for d, name in enumerate(day_labels):
         label_y = y + d * (CELL_SIZE + CELL_GAP) + 4
         draw.text((PADDING, label_y), name, fill=COLOR_MUTED, font=font_small)
 
-    # 6. Сетка
+    # Сетка
     for d in range(7):
         for w in range(weeks):
             day = start_monday + timedelta(weeks=w, days=d)
@@ -154,22 +141,16 @@ def render_stats(
 
     y += 7 * (CELL_SIZE + CELL_GAP) - CELL_GAP + 16
 
-    # 7. Легенда
-    draw.rounded_rectangle(
-        [PADDING, y, PADDING + 14, y + 14],
-        radius=3, fill=COLOR_DONE,
-    )
+    # Легенда
+    draw.rounded_rectangle([PADDING, y, PADDING + 14, y + 14], radius=3, fill=COLOR_DONE)
     draw.text((PADDING + 20, y - 1), "выполнено", fill=COLOR_TEXT, font=font_small)
 
-    draw.rounded_rectangle(
-        [PADDING + 110, y, PADDING + 124, y + 14],
-        radius=3, fill=COLOR_EMPTY,
-    )
+    draw.rounded_rectangle([PADDING + 110, y, PADDING + 124, y + 14], radius=3, fill=COLOR_EMPTY)
     draw.text((PADDING + 130, y - 1), "не выполнено", fill=COLOR_TEXT, font=font_small)
 
     y += 16 + 20
 
-    # 8. По навыкам
+    # По навыкам
     draw.text((PADDING, y), "По навыкам:", fill=COLOR_TITLE, font=font_stat)
     y += 20
 

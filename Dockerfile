@@ -3,8 +3,6 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Устанавливаем системные шрифты с кириллицей (для рендера картинок)
-RUN apt-get update && apt-get install -y fonts-roboto && rm -rf /var/lib/apt/lists/*
 
 # Копируем зависимости и ставим их
 COPY requirements.txt .
