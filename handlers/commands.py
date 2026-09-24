@@ -77,7 +77,7 @@ class SkillsStates(StatesGroup):
 
 @router.message(Command("stats"))
 async def cmd_stats(message: Message) -> None:
-    """Показывает статистику + календарь одним сообщением."""
+    """Статистика + календарь в одном сообщении."""
     from core import (
         get_user_stats, get_current_streak,
         get_activity_dates, get_skill_stats,
@@ -97,7 +97,6 @@ async def cmd_stats(message: Message) -> None:
     done_dates = await get_activity_dates(user_id, days=56)
     skill_stats = await get_skill_stats(user_id)
 
-    # Список навыков
     if skill_stats:
         skills_text = "\n".join([
             f"• {s['name']} — 🔥 {s['streak']} дн. | {s['percent']}%"
@@ -106,29 +105,29 @@ async def cmd_stats(message: Message) -> None:
     else:
         skills_text = "— пока нет активных навыков"
 
-    # Формируем подпись (caption)
-    caption = texts.STATS.format(
-        active_count=stats["active_count"],
-        total_done=stats["total_done"],
-        total_success=stats["total_success"],
-        current_streak=current_streak,
-        best_streak=stats["best_streak"],
-        skills_text=skills_text,
+    caption = (
+        "🟩 выполнено   ⬜ не выполнено\n\n"
+        f"🎯 <b>По навыкам:</b>\n{skills_text}"
     )
-    caption += "\n\n🟩 выполнено   ⬜ не выполнено"
 
-    # Одно сообщение: картинка + текст
     try:
-        photo = render_calendar(done_dates, weeks=8)
+        photo = render_calendar(
+            done_dates,
+            weeks=8,
+            active_count=stats["active_count"],
+            total_done=stats["total_done"],
+            total_success=stats["total_success"],
+            current_streak=current_streak,
+            best_streak=stats["best_streak"],
+        )
         await message.answer_photo(
-            BufferedInputFile(photo.getvalue(), filename="calendar.png"),
+            BufferedInputFile(photo.getvalue(), filename="stats.png"),
             caption=caption,
             parse_mode="HTML",
         )
     except Exception as e:
         import logging
-        logging.getLogger(__name__).error(f"Ошибка рендера календаря: {e}")
-        # fallback — просто текст
+        logging.getLogger(__name__).error(f"Ошибка рендера: {e}")
         await message.answer(caption, parse_mode="HTML")
 
 # ============ /help ============
