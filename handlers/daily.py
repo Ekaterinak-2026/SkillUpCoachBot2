@@ -9,9 +9,7 @@ from aiogram.types import CallbackQuery
 from aiogram.fsm.context import FSMContext
 from datetime import datetime
 from zoneinfo import ZoneInfo
-import logging
 
-logger = logging.getLogger(__name__)
 
 from core import (
     get_user,
@@ -101,11 +99,7 @@ async def process_morning_step(callback: CallbackQuery, state: FSMContext) -> No
             next_skill = s
             break
 
-    logger.info(
-        f"DEBUG: skills={[(s['id'], s['name']) for s in skills]}, "
-        f"chosen={chosen}, next={next_skill['name'] if next_skill else None}"
-    )
-
+   
     if next_skill:
         # Формируем сообщение с уже выбранными + следующим
         user = await get_user(user_id)
