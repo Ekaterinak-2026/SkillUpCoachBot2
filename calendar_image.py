@@ -1,67 +1,80 @@
 """
 Генерация картинки с календарём активности.
-Использует Pillow для рендера зелёных квадратиков (как в GitHub-контрибуциях).
+Компактный стиль как в GitHub-контрибуциях.
 """
 from io import BytesIO
 from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont
+import os
 
 # Цвета
 COLOR_DONE = "#4CAF50"       # зелёный — выполнен
-COLOR_EMPTY = "#E0E0E0"      # серый — не выполнен
-COLOR_FUTURE = "#F5F5F5"     # светлый — будущее
+COLOR_EMPTY = "#EBEDF0"      # светло-серый — не выполнен
+COLOR_FUTURE = "#F5F5F5"     # будущее (не наступило)
 COLOR_BG = "#FFFFFF"         # фон
 COLOR_TEXT = "#666666"       # цвет текста
+COLOR_TITLE = "#24292F"      # цвет заголовка
 
-CELL_SIZE = 28
-CELL_GAP = 4
-LEFT_MARGIN = 50
-TOP_MARGIN = 45
-BOTTOM_MARGIN = 40
-RIGHT_MARGIN = 20
+CELL_SIZE = 18
+CELL_GAP = 3
+LEFT_MARGIN = 36
+TOP_MARGIN = 48
+BOTTOM_MARGIN = 36
+RIGHT_MARGIN = 16
 
 
 def _get_font(size: int):
-    """Пробует найти системный шрифт, иначе — дефолтный."""
-    candidates = [
-        "DejaVuSans.ttf",
-        "Arial.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+    """Загружает DejaVuSans из папки проекта (с кириллицей)."""
+    paths = [
+        os.path.join(os.path.dirname(__file__), "fonts", "DejaVuSans.ttf"),
+        "fonts/DejaVuSans.ttf",
+        "/app/fonts/DejaVuSans.ttf",
     ]
-    for path in candidates:
-        try:
-            return ImageFont.truetype(path, size)
-        except Exception:
-            continue
+    for path in paths:
+        if os.path.exists(path):
+            try:
+                return ImageFont.truetype(path, size)
+            except Exception:
+                continue
     return ImageFont.load_default()
 
 
 def render_calendar(done_dates: set, weeks: int = 8) -> BytesIO:
-    """Рисует календарь активности и возвращает PNG в BytesIO."""
+    """Рисует компактный календарь активности и возвращает PNG в BytesIO."""
     width = LEFT_MARGIN + weeks * (CELL_SIZE + CELL_GAP) + RIGHT_MARGIN
     height = TOP_MARGIN + 7 * (CELL_SIZE + CELL_GAP) + BOTTOM_MARGIN
 
     img = Image.new("RGB", (width, height), COLOR_BG)
     draw = ImageDraw.Draw(img)
 
-    font = _get_font(15)
-    font_small = _get_font(12)
+    font_title = _get_font(13)
+    font_small = _get_font(10)
 
-    # Заголовок
+    # Период
     today = datetime.now().date()
     monday = today - timedelta(days=today.weekday())
     start_monday = monday - timedelta(weeks=weeks - 1)
-    end_date = start_monday + timedelta(weeks=weeks - 1, days=6)
 
-    period = f"{start_monday.strftime('%d.%m')} — {end_date.strftime('%d.%m')}"
-    draw.text((LEFT_MARGIN, 12), f"Активность: {period}", fill=COLOR_TEXT, font=font)
+    period = f"{start_monday.strftime('%d.%m')} — {today.strftime('%d.%m')}"
+    draw.text((LEFT_MARGIN, 8), f"Активность: {period}", fill=COLOR_TITLE, font=font_title)
 
-    # Дни недели слева
-    day_names = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
-    for d, name in enumerate(day_names):
-        y = TOP_MARGIN + d * (CELL_SIZE + CELL_GAP) + 6
-        draw.text((12, y), name, fill=COLOR_TEXT, font=font_small)
+    # Дни недели слева (только Пн, Ср, Пт — как в GitHub)
+    day_names = {0: "Пн", 2: "Ср", 4: "Пт"}
+    for d, name in day_names.items():
+        y = TOP_MARGIN + d * (CELL_SIZE + CELL_GAP) + 3
+        draw.text((6, y), name, fill=COLOR_TEXT, font=font_small)
+
+    # Подписи месяцев сверху
+    last_month = None
+    for w in range(weeks):
+        week_start = start_monday + timedelta(weeks=w)
+        if week_start.month != last_month:
+            month_names = ["янв", "фев", "мар", "апр", "май", "июн",
+                           "июл", "авг", "сен", "окт", "ноя", "дек"]
+            month_label = month_names[week_start.month - 1]
+            x = LEFT_MARGIN + w * (CELL_SIZE + CELL_GAP)
+            draw.text((x, 26), month_label, fill=COLOR_TEXT, font=font_small)
+            last_month = week_start.month
 
     # Сетка
     for d in range(7):
@@ -79,17 +92,9 @@ def render_calendar(done_dates: set, weeks: int = 8) -> BytesIO:
 
             draw.rounded_rectangle(
                 [x, y, x + CELL_SIZE, y + CELL_SIZE],
-                radius=6,
+                radius=3,
                 fill=color,
             )
-
-    # Подпись
-    draw.text(
-        (LEFT_MARGIN, height - 24),
-        "SkillUp Coach",
-        fill=COLOR_TEXT,
-        font=font_small,
-    )
 
     buf = BytesIO()
     img.save(buf, format="PNG")
