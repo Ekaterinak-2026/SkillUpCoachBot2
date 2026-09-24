@@ -77,8 +77,7 @@ class SkillsStates(StatesGroup):
 
 @router.message(Command("stats"))
 async def cmd_stats(message: Message) -> None:
-    """Показывает статистику пользователя + картинку с календарём."""
-    from datetime import datetime, timedelta
+    """Показывает статистику + календарь одним сообщением."""
     from core import (
         get_user_stats, get_current_streak,
         get_activity_dates, get_skill_stats,
@@ -107,29 +106,30 @@ async def cmd_stats(message: Message) -> None:
     else:
         skills_text = "— пока нет активных навыков"
 
-    # 1. Текстовая статистика
-    await message.answer(
-        texts.STATS.format(
-            active_count=stats["active_count"],
-            total_done=stats["total_done"],
-            total_success=stats["total_success"],
-            current_streak=current_streak,
-            best_streak=stats["best_streak"],
-            skills_text=skills_text,
-        ),
-        parse_mode="HTML",
+    # Формируем подпись (caption)
+    caption = texts.STATS.format(
+        active_count=stats["active_count"],
+        total_done=stats["total_done"],
+        total_success=stats["total_success"],
+        current_streak=current_streak,
+        best_streak=stats["best_streak"],
+        skills_text=skills_text,
     )
+    caption += "\n\n🟩 выполнено   ⬜ не выполнено"
 
-    # 2. Картинка с календарём
+    # Одно сообщение: картинка + текст
     try:
         photo = render_calendar(done_dates, weeks=8)
         await message.answer_photo(
             BufferedInputFile(photo.getvalue(), filename="calendar.png"),
-            caption="📈 Активность за 8 недель",
+            caption=caption,
+            parse_mode="HTML",
         )
     except Exception as e:
         import logging
         logging.getLogger(__name__).error(f"Ошибка рендера календаря: {e}")
+        # fallback — просто текст
+        await message.answer(caption, parse_mode="HTML")
 
 # ============ /help ============
 
