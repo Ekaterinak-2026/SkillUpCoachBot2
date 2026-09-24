@@ -99,6 +99,7 @@ async def process_morning_step(callback: CallbackQuery, state: FSMContext) -> No
         if str(s["id"]) not in chosen:
             next_skill = s
             break
+        print(f"DEBUG: skills={[s['id'] for s in skills]}, chosen={list(chosen.keys())}, next_skill={next_skill}")
 
         if next_skill:
         # Формируем сообщение с уже выбранными + следующим
