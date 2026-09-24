@@ -111,14 +111,13 @@ async def cmd_stats(message: Message) -> None:
         for w in range(8):
             day = start_monday + timedelta(weeks=w, days=d)
             if day > today:
-                line += "⬜ "
+                line += "⬜"
             elif day.strftime("%Y-%m-%d") in done_dates:
-                line += "🟩 "
+                line += "🟩"
             else:
-                line += "⬜ "
+                line += "⬜"
         calendar_lines.append(line)
     calendar = "\n".join(calendar_lines)
-
     # ---- Список навыков ----
     if skill_stats:
         skills_text = "\n".join([
