@@ -77,12 +77,14 @@ class SkillsStates(StatesGroup):
 
 @router.message(Command("stats"))
 async def cmd_stats(message: Message) -> None:
-    """Показывает статистику пользователя."""
+    """Показывает статистику пользователя + картинку с календарём."""
     from datetime import datetime, timedelta
     from core import (
         get_user_stats, get_current_streak,
         get_activity_dates, get_skill_stats,
     )
+    from calendar_image import render_calendar
+    from aiogram.types import BufferedInputFile
 
     user_id = message.from_user.id
     user = await get_user(user_id)
@@ -93,28 +95,8 @@ async def cmd_stats(message: Message) -> None:
 
     stats = await get_user_stats(user_id)
     current_streak = await get_current_streak(user_id)
-    done_dates = await get_activity_dates(user_id, days=42)
+    done_dates = await get_activity_dates(user_id, days=56)
     skill_stats = await get_skill_stats(user_id)
-
-    # Календарь: 6 недель × 7 дней (Пн-Вс), читаемые моноширинные символы
-    today = datetime.now().date()
-    monday = today - timedelta(days=today.weekday())
-    start_monday = monday - timedelta(weeks=5)  # 6 недель: текущая + 5 назад
-
-    day_names = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
-    lines = []
-    for d in range(7):
-        row = day_names[d] + " "
-        for w in range(6):
-            day = start_monday + timedelta(weeks=w, days=d)
-            if day > today:
-                row += "·"
-            elif day.strftime("%Y-%m-%d") in done_dates:
-                row += "█"
-            else:
-                row += "·"
-        lines.append(row)
-    calendar = "<code>" + "\n".join(lines) + "</code>"
 
     # Список навыков
     if skill_stats:
@@ -125,6 +107,7 @@ async def cmd_stats(message: Message) -> None:
     else:
         skills_text = "— пока нет активных навыков"
 
+    # 1. Текстовая статистика
     await message.answer(
         texts.STATS.format(
             active_count=stats["active_count"],
@@ -132,11 +115,21 @@ async def cmd_stats(message: Message) -> None:
             total_success=stats["total_success"],
             current_streak=current_streak,
             best_streak=stats["best_streak"],
-            calendar=calendar,
             skills_text=skills_text,
         ),
         parse_mode="HTML",
     )
+
+    # 2. Картинка с календарём
+    try:
+        photo = render_calendar(done_dates, weeks=8)
+        await message.answer_photo(
+            BufferedInputFile(photo.getvalue(), filename="calendar.png"),
+            caption="📈 Активность за 8 недель",
+        )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Ошибка рендера календаря: {e}")
 
 # ============ /help ============
 
@@ -190,7 +183,7 @@ async def process_new_morning_time(message: Message, state: FSMContext) -> None:
 
     await update_user_time(message.from_user.id, morning=time_str)
     await message.answer(
-        f"🌅 Утреннее время изменено на {time_str}.\n\n"
+        f"☀️ Утреннее время изменено на {time_str}.\n\n"
         f"Теперь напиши новое вечернее время (ЧЧ:ММ):"
     )
     await state.set_state(SettingsStates.changing_evening)
