@@ -65,7 +65,6 @@ def _get_greeting(tz_name: str | None) -> str:
 
 
 # ============ УТРО: ВЫБОР ТИПА ШАГА ============
-
 @router.callback_query(F.data.startswith("ms:"))
 async def process_morning_step(callback: CallbackQuery, state: FSMContext) -> None:
     """Пользователь выбрал тип шага для одного навыка утром."""
@@ -101,27 +100,31 @@ async def process_morning_step(callback: CallbackQuery, state: FSMContext) -> No
         if str(s["id"]) not in chosen:
             next_skill = s
             break
-        logger.info(f"DEBUG: skills={[(s['id'], s['name']) for s in skills]}, chosen={chosen}, next={next_skill}")
 
-        if next_skill:
+    logger.info(
+        f"DEBUG: skills={[(s['id'], s['name']) for s in skills]}, "
+        f"chosen={chosen}, next={next_skill['name'] if next_skill else None}"
+    )
+
+    if next_skill:
         # Формируем сообщение с уже выбранными + следующим
-            user = await get_user(user_id)
-            greeting = _get_greeting(user.get("timezone") if user else None)
-            lines = [greeting, ""]
-            for s in skills:
-                if str(s["id"]) in chosen:
-                    lines.append(f"✅ {s['name']} — {chosen[str(s['id'])]}")
-            lines.append("")
-            lines.append(f"📌 {next_skill['name']}:")
+        user = await get_user(user_id)
+        greeting = _get_greeting(user.get("timezone") if user else None)
+        lines = [greeting, ""]
+        for s in skills:
+            if str(s["id"]) in chosen:
+                lines.append(f"✅ {s['name']} — {chosen[str(s['id'])]}")
+        lines.append("")
+        lines.append(f"📌 {next_skill['name']}:")
 
-            await callback.message.edit_text(
-                "\n".join(lines),
-                reply_markup=step_type_keyboard(next_skill["id"])
-            )
-        else:
+        await callback.message.edit_text(
+            "\n".join(lines),
+            reply_markup=step_type_keyboard(next_skill["id"])
+        )
+    else:
         # Все навыки пройдены — сохраняем в БД
-            for sid_str, st in chosen.items():
-                await save_daily_plan_for_skill(user_id, int(sid_str), st)
+        for sid_str, st in chosen.items():
+            await save_daily_plan_for_skill(user_id, int(sid_str), st)
 
         lines = ["📋 План на сегодня:", ""]
         for s in skills:
@@ -136,7 +139,6 @@ async def process_morning_step(callback: CallbackQuery, state: FSMContext) -> No
         current_hm = ""
         evening_time = "20:00"
         if user:
-            from zoneinfo import ZoneInfo
             try:
                 tz = ZoneInfo(user.get("timezone") or "Europe/Moscow")
             except Exception:
@@ -158,9 +160,7 @@ async def process_morning_step(callback: CallbackQuery, state: FSMContext) -> No
             if pending:
                 first = pending[0]
                 skill_name = first.get("skill_name") or "навык"
-                evening_text = (
-                    f"📌 {skill_name} — {first['step_type']}. Получилось?"
-                )
+                evening_text = f"📌 {skill_name} — {first['step_type']}. Получилось?"
                 await callback.message.answer(
                     evening_text,
                     reply_markup=evening_check_keyboard(first["skill_id"])
@@ -172,7 +172,6 @@ async def process_morning_step(callback: CallbackQuery, state: FSMContext) -> No
             await callback.message.edit_text("\n".join(lines))
 
         await state.clear()
-
     
 
 
