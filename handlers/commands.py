@@ -583,8 +583,6 @@ ADMIN_ID = 810402439
 @router.message(Command("admin_stats"))
 async def cmd_admin_stats(message: Message) -> None:
     """Показывает метрики бота. Доступно только админу."""
-    import logging
-    logging.getLogger(__name__).info(f"ADMIN_STATS CALLED: user_id={message.from_user.id}, ADMIN_ID={ADMIN_ID}")
     if message.from_user.id != ADMIN_ID:
         return# тихо игнорируем всех остальных
 
@@ -722,36 +720,25 @@ async def process_feedback(message: Message, state: FSMContext) -> None:
 
 @router.message(Command("admin_feedback"))
 async def cmd_admin_feedback(message: Message) -> None:
-    """ТЕСТ: показывает последние сообщения обратной связи."""
-    try:
-        if message.from_user.id != ADMIN_ID:
-            await message.answer(f"❌ Не админ. Твой ID: {message.from_user.id}")
-            return
+    """Показывает последние сообщения обратной связи."""
+    if message.from_user.id != ADMIN_ID:
+        return
 
-        await message.answer("🔍 Тест: функция вызвана. Загружаю данные...")
+    from core import get_all_feedback
+    items = await get_all_feedback(limit=20)
 
-        from core import get_all_feedback
-        items = await get_all_feedback(limit=20)
+    if not items:
+        await message.answer("📭 Пока нет сообщений обратной связи.")
+        return
 
-        if not items:
-            await message.answer("📭 Пока нет сообщений обратной связи.")
-            return
-
-        await message.answer(f"✅ Найдено {len(items)} сообщений. Отправляю...")
-
-        lines = [f"📬 Фидбек (последние {len(items)}):\n"]
-        for it in items:
-            lines.append(
-                f"#{it['id']} | {it['username']} | {it['created_at']}\n"
-                f"{it['text']}\n"
-            )
-        text = "\n".join(lines)
-        if len(text) > 4000:
-            text = text[:4000] + "\n\n...(обрезано)"
-
-        await message.answer(text)
-
-    except Exception as e:
-        import traceback
-        tb = traceback.format_exc()[:1000]
-        await message.answer(f"⚠️ Ошибка: {type(e).__name__}: {e}\n\n{tb}")
+    lines = ["📬 <b>Обратная связь (последние 20):</b>\n"]
+    for it in items:
+        lines.append(
+            f"<b>#{it['id']}</b> — {it['username']}\n"
+            f"🕐 {it['created_at']}\n"
+            f"💬 {it['text']}\n"
+        )
+    text = "\n".join(lines)
+    if len(text) > 4000:
+        text = text[:4000] + "\n\n…(сокращено)"
+    await message.answer(text, parse_mode="HTML")
