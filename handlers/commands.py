@@ -577,7 +577,7 @@ async def cb_skill_restore(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.answer()
     # ============ АДМИН-СТАТИСТИКА ============
 
-ADMIN_ID = 810492439
+ADMIN_ID = 810402439
 
 
 @router.message(Command("admin_stats"))
