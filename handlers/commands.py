@@ -77,13 +77,12 @@ class SkillsStates(StatesGroup):
 
 @router.message(Command("stats"))
 async def cmd_stats(message: Message) -> None:
-    """Текст — в caption (системный шрифт), календарь — картинкой."""
-    from datetime import datetime
+    """Вся статистика одной картинкой (как Habit Otter)."""
     from core import (
         get_user_stats, get_current_streak,
         get_activity_dates, get_skill_stats,
     )
-    from calendar_image import render_calendar
+    from calendar_image import render_stats
     from aiogram.types import BufferedInputFile
 
     user_id = message.from_user.id
@@ -98,41 +97,24 @@ async def cmd_stats(message: Message) -> None:
     done_dates = await get_activity_dates(user_id, days=56)
     skill_stats = await get_skill_stats(user_id)
 
-    if skill_stats:
-        skills_text = "\n".join([
-            f"• {s['name']} — 🔥 {s['streak']} дн. | {s['percent']}%"
-            for s in skill_stats
-        ])
-    else:
-        skills_text = "— пока нет активных навыков"
-
-    today = datetime.now().date()
-    period_end = today.strftime("%d.%m")
-
-    caption = (
-        f"🏆 <b>Твоя статистика</b>\n\n"
-        f"📊 Активных навыков: <b>{stats['active_count']}</b>\n"
-        f"✅ Всего шагов: <b>{stats['total_done']}</b>\n"
-        f"⭐ Звёзд собрано: <b>{stats['total_success']}</b>\n"
-        f"🔥 Текущая серия: <b>{current_streak} дн.</b>\n"
-        f"🏅 Лучшая серия: <b>{stats['best_streak']} дн.</b>\n\n"
-        f"📈 Активность по {period_end}\n"
-        f"🟩 выполнено    ⬜ не выполнено\n\n"
-        f"🎯 <b>По навыкам:</b>\n{skills_text}"
-    )
-
     try:
-        photo = render_calendar(done_dates, weeks=8)
+        photo = render_stats(
+            done_dates,
+            weeks=8,
+            active_count=stats["active_count"],
+            total_done=stats["total_done"],
+            total_success=stats["total_success"],
+            current_streak=current_streak,
+            best_streak=stats["best_streak"],
+            skill_stats=skill_stats,
+        )
         await message.answer_photo(
-            BufferedInputFile(photo.getvalue(), filename="calendar.png"),
-            caption=caption,
-            parse_mode="HTML",
+            BufferedInputFile(photo.getvalue(), filename="stats.png"),
         )
     except Exception as e:
         import logging
         logging.getLogger(__name__).error(f"Ошибка рендера: {e}")
-        await message.answer(caption, parse_mode="HTML")
-
+        await message.answer("⚠️ Не удалось построить статистику.")
    
 # ============ /help ============
 
