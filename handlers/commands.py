@@ -77,7 +77,7 @@ class SkillsStates(StatesGroup):
 
 @router.message(Command("stats"))
 async def cmd_stats(message: Message) -> None:
-    """Статистика + текстовый календарь с эмодзи."""
+    """Статистика + календарь (серые квадратики в <code>)."""
     from datetime import datetime, timedelta
     from core import (
         get_user_stats, get_current_streak,
@@ -93,33 +93,30 @@ async def cmd_stats(message: Message) -> None:
 
     stats = await get_user_stats(user_id)
     current_streak = await get_current_streak(user_id)
-    done_dates = await get_activity_dates(user_id, days=56)
+    done_dates = await get_activity_dates(user_id, days=42)
     skill_stats = await get_skill_stats(user_id)
 
-    # ---- Календарь (8 недель) ----
+    # Календарь: 6 недель × 7 дней
     today = datetime.now().date()
     monday = today - timedelta(days=today.weekday())
-    start_monday = monday - timedelta(weeks=7)
-
-    period_start = start_monday.strftime("%d.%m")
-    period_end = today.strftime("%d.%m")
+    start_monday = monday - timedelta(weeks=5)
 
     day_names = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
-    calendar_lines = []
+    lines = []
     for d in range(7):
-        line = day_names[d] + " "
-        for w in range(8):
+        row = day_names[d] + " "
+        for w in range(6):
             day = start_monday + timedelta(weeks=w, days=d)
             if day > today:
-                line += "⬜"
+                row += "·"
             elif day.strftime("%Y-%m-%d") in done_dates:
-                line += "🟩"
+                row += "█"
             else:
-                line += "⬜"
-        calendar_lines.append(line)
-    calendar = "\n".join(calendar_lines)
+                row += "·"
+        lines.append(row)
+    calendar = "<code>" + "\n".join(lines) + "</code>"
 
-    # ---- Навыки ----
+    # Список навыков
     if skill_stats:
         skills_text = "\n".join([
             f"• {s['name']} — 🔥 {s['streak']} дн. | {s['percent']}%"
@@ -128,21 +125,18 @@ async def cmd_stats(message: Message) -> None:
     else:
         skills_text = "— пока нет активных навыков"
 
-    # ---- Сообщение ----
-    text = (
-        f"🏆 <b>Твоя статистика</b>\n\n"
-        f"📊 Активных навыков: <b>{stats['active_count']}</b>\n"
-        f"✅ Всего шагов: <b>{stats['total_done']}</b>\n"
-        f"⭐ Звёзд собрано: <b>{stats['total_success']}</b>\n"
-        f"🔥 Текущая серия: <b>{current_streak} дн.</b>\n"
-        f"🏅 Лучшая серия: <b>{stats['best_streak']} дн.</b>\n\n"
-        f"📈 <b>Активность: {period_start} — {period_end}</b>\n\n"
-        f"{calendar}\n\n"
-        f"🟩 выполнено    ⬜ не выполнено\n\n"
-        f"🎯 <b>По навыкам:</b>\n{skills_text}"
+    await message.answer(
+        texts.STATS.format(
+            active_count=stats["active_count"],
+            total_done=stats["total_done"],
+            total_success=stats["total_success"],
+            current_streak=current_streak,
+            best_streak=stats["best_streak"],
+            calendar=calendar,
+            skills_text=skills_text,
+        ),
+        parse_mode="HTML",
     )
-
-    await message.answer(text, parse_mode="HTML")
 # ============ /help ============
 
 @router.message(Command("help"))
