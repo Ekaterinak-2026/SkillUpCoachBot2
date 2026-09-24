@@ -722,26 +722,36 @@ async def process_feedback(message: Message, state: FSMContext) -> None:
 
 @router.message(Command("admin_feedback"))
 async def cmd_admin_feedback(message: Message) -> None:
-    """Показывает последние сообщения обратной связи."""
-    if message.from_user.id != ADMIN_ID:
-        return
+    """ТЕСТ: показывает последние сообщения обратной связи."""
+    try:
+        if message.from_user.id != ADMIN_ID:
+            await message.answer(f"❌ Не админ. Твой ID: {message.from_user.id}")
+            return
 
-    from core import get_all_feedback
-    items = await get_all_feedback(limit=20)
+        await message.answer("🔍 Тест: функция вызвана. Загружаю данные...")
 
-    if not items:
-        await message.answer("📭 Пока нет сообщений обратной связи.")
-        return
+        from core import get_all_feedback
+        items = await get_all_feedback(limit=20)
 
-    # Простой текстовый формат без HTML
-    lines = [f"📬 Фидбек (последние {len(items)}):\n"]
-    for it in items:
-        lines.append(
-            f"#{it['id']} | {it['username']} | {it['created_at']}\n"
-            f"{it['text']}\n"
-        )
-    text = "\n".join(lines)
-    if len(text) > 4000:
-        text = text[:4000] + "\n\n...(обрезано)"
+        if not items:
+            await message.answer("📭 Пока нет сообщений обратной связи.")
+            return
 
-    await message.answer(text)
+        await message.answer(f"✅ Найдено {len(items)} сообщений. Отправляю...")
+
+        lines = [f"📬 Фидбек (последние {len(items)}):\n"]
+        for it in items:
+            lines.append(
+                f"#{it['id']} | {it['username']} | {it['created_at']}\n"
+                f"{it['text']}\n"
+            )
+        text = "\n".join(lines)
+        if len(text) > 4000:
+            text = text[:4000] + "\n\n...(обрезано)"
+
+        await message.answer(text)
+
+    except Exception as e:
+        import traceback
+        tb = traceback.format_exc()[:1000]
+        await message.answer(f"⚠️ Ошибка: {type(e).__name__}: {e}\n\n{tb}")
