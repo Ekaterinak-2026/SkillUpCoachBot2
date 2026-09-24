@@ -1,6 +1,5 @@
 """
-Генерация картинки со статистикой.
-Рисует заголовок + метрики + календарь.
+Только календарь-картинка. Всё остальное — в caption.
 """
 from io import BytesIO
 from datetime import datetime, timedelta
@@ -11,22 +10,26 @@ COLOR_DONE = "#4CAF50"
 COLOR_EMPTY = "#EBEDF0"
 COLOR_FUTURE = "#F5F5F5"
 COLOR_BG = "#FFFFFF"
-COLOR_TITLE = "#24292F"
-COLOR_TEXT = "#57606A"
+COLOR_MUTED = "#8B949E"
 
 CELL_SIZE = 22
 CELL_GAP = 4
-PADDING = 20
+PADDING = 16
+LABEL_WIDTH = 32
+TOP_MONTH_HEIGHT = 16
 
 
 def _get_font(size: int, bold: bool = False):
-    """Загружает системный DejaVuSans (устанавливается через Dockerfile)."""
-    filename = "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf"
-    paths = [
-        f"/usr/share/fonts/truetype/dejavu/{filename}",
-        f"/usr/share/fonts/TTF/{filename}",
+    """Roboto (с fallback на DejaVu)."""
+    roboto_paths = [
+        f"/usr/share/fonts/truetype/roboto/unhinted/Roboto-{'Bold' if bold else 'Regular'}.ttf",
+        f"/usr/share/fonts/truetype/roboto/Roboto-{'Bold' if bold else 'Regular'}.ttf",
+        f"/usr/share/fonts/truetype/roboto/hinted/Roboto-{'Bold' if bold else 'Regular'}.ttf",
     ]
-    for path in paths:
+    dejavu_paths = [
+        f"/usr/share/fonts/truetype/dejavu/DejaVuSans{'-Bold' if bold else ''}.ttf",
+    ]
+    for path in roboto_paths + dejavu_paths:
         if os.path.exists(path):
             try:
                 return ImageFont.truetype(path, size)
@@ -35,58 +38,45 @@ def _get_font(size: int, bold: bool = False):
     return ImageFont.load_default()
 
 
-def render_calendar(
-    done_dates: set,
-    weeks: int = 8,
-    active_count: int = 0,
-    total_done: int = 0,
-    total_success: int = 0,
-    current_streak: int = 0,
-    best_streak: int = 0,
-) -> BytesIO:
-    """Рисует картинку со статистикой и календарём."""
+def render_calendar(done_dates: set, weeks: int = 8) -> BytesIO:
+    """Рисует компактный календарь: месяц сверху, дни недели слева."""
     today = datetime.now().date()
     monday = today - timedelta(days=today.weekday())
     start_monday = monday - timedelta(weeks=weeks - 1)
 
-    calendar_width = weeks * (CELL_SIZE + CELL_GAP) - CELL_GAP
-    width = PADDING * 2 + max(calendar_width, 280)
+    font_small = _get_font(11)
 
-    font_title = _get_font(16, bold=True)
-    font_stat = _get_font(13)
-
-    top_block = 24 + 8 + 20 + 6 + 20 + 12 + 20 + 6
-    cal_height = 7 * (CELL_SIZE + CELL_GAP) - CELL_GAP
-    height = PADDING * 2 + top_block + cal_height
+    width = PADDING * 2 + LABEL_WIDTH + weeks * (CELL_SIZE + CELL_GAP) - CELL_GAP
+    height = PADDING * 2 + TOP_MONTH_HEIGHT + 7 * (CELL_SIZE + CELL_GAP) - CELL_GAP
 
     img = Image.new("RGB", (width, height), COLOR_BG)
     draw = ImageDraw.Draw(img)
 
-    y = PADDING
+    # Подписи месяцев сверху
+    month_names = ["янв", "фев", "мар", "апр", "май", "июн",
+                   "июл", "авг", "сен", "окт", "ноя", "дек"]
+    last_month = None
+    for w in range(weeks):
+        week_start = start_monday + timedelta(weeks=w)
+        if week_start.month != last_month:
+            x = PADDING + LABEL_WIDTH + w * (CELL_SIZE + CELL_GAP)
+            draw.text((x, PADDING), month_names[week_start.month - 1],
+                      fill=COLOR_MUTED, font=font_small)
+            last_month = week_start.month
 
-    # 1. Заголовок
-    draw.text((PADDING, y), "Твоя статистика", fill=COLOR_TITLE, font=font_title)
-    y += 24 + 8
+    # Дни недели слева
+    day_labels = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+    y0 = PADDING + TOP_MONTH_HEIGHT
+    for d, name in enumerate(day_labels):
+        y = y0 + d * (CELL_SIZE + CELL_GAP) + 5
+        draw.text((PADDING, y), name, fill=COLOR_MUTED, font=font_small)
 
-    # 2. Метрики
-    line1 = f"Активных: {active_count}     Всего шагов: {total_done}"
-    line2 = f"Звёзд: {total_success}     Серия: {current_streak} дн. (лучшая: {best_streak})"
-    draw.text((PADDING, y), line1, fill=COLOR_TEXT, font=font_stat)
-    y += 20 + 6
-    draw.text((PADDING, y), line2, fill=COLOR_TEXT, font=font_stat)
-    y += 20 + 12
-
-    # 3. Активность
-    period = f"{start_monday.strftime('%d.%m')} — {today.strftime('%d.%m')}"
-    draw.text((PADDING, y), f"Активность: {period}", fill=COLOR_TITLE, font=font_stat)
-    y += 20 + 6
-
-    # 4. Календарь
+    # Сетка
     for d in range(7):
         for w in range(weeks):
             day = start_monday + timedelta(weeks=w, days=d)
-            x = PADDING + w * (CELL_SIZE + CELL_GAP)
-            y_cell = y + d * (CELL_SIZE + CELL_GAP)
+            x = PADDING + LABEL_WIDTH + w * (CELL_SIZE + CELL_GAP)
+            y = y0 + d * (CELL_SIZE + CELL_GAP)
 
             if day > today:
                 color = COLOR_FUTURE
@@ -96,7 +86,7 @@ def render_calendar(
                 color = COLOR_EMPTY
 
             draw.rounded_rectangle(
-                [x, y_cell, x + CELL_SIZE, y_cell + CELL_SIZE],
+                [x, y, x + CELL_SIZE, y + CELL_SIZE],
                 radius=4,
                 fill=color,
             )

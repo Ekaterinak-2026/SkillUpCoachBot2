@@ -77,12 +77,14 @@ class SkillsStates(StatesGroup):
 
 @router.message(Command("stats"))
 async def cmd_stats(message: Message) -> None:
-    """Статистика + текстовый календарь с эмодзи."""
-    from datetime import datetime, timedelta
+    """Текст — в caption (системный шрифт), календарь — картинкой."""
+    from datetime import datetime
     from core import (
         get_user_stats, get_current_streak,
         get_activity_dates, get_skill_stats,
     )
+    from calendar_image import render_calendar
+    from aiogram.types import BufferedInputFile
 
     user_id = message.from_user.id
     user = await get_user(user_id)
@@ -96,29 +98,6 @@ async def cmd_stats(message: Message) -> None:
     done_dates = await get_activity_dates(user_id, days=56)
     skill_stats = await get_skill_stats(user_id)
 
-    # ---- Календарь (8 недель = 56 дней) ----
-    today = datetime.now().date()
-    monday = today - timedelta(days=today.weekday())
-    start_monday = monday - timedelta(weeks=7)
-
-    period_start = start_monday.strftime("%d.%m")
-    period_end = today.strftime("%d.%m")
-
-    day_names = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
-    calendar_lines = []
-    for d in range(7):
-        line = day_names[d] + " "
-        for w in range(8):
-            day = start_monday + timedelta(weeks=w, days=d)
-            if day > today:
-                line += "⬜"
-            elif day.strftime("%Y-%m-%d") in done_dates:
-                line += "🟩"
-            else:
-                line += "⬜"
-        calendar_lines.append(line)
-    calendar = "\n".join(calendar_lines)
-    # ---- Список навыков ----
     if skill_stats:
         skills_text = "\n".join([
             f"• {s['name']} — 🔥 {s['streak']} дн. | {s['percent']}%"
@@ -127,23 +106,34 @@ async def cmd_stats(message: Message) -> None:
     else:
         skills_text = "— пока нет активных навыков"
 
-    # ---- Собираем сообщение ----
-    # ВАЖНО: календарь — БЕЗ <code>, чтобы эмодзи были цветными
-    text = (
+    today = datetime.now().date()
+    period_end = today.strftime("%d.%m")
+
+    caption = (
         f"🏆 <b>Твоя статистика</b>\n\n"
         f"📊 Активных навыков: <b>{stats['active_count']}</b>\n"
         f"✅ Всего шагов: <b>{stats['total_done']}</b>\n"
         f"⭐ Звёзд собрано: <b>{stats['total_success']}</b>\n"
         f"🔥 Текущая серия: <b>{current_streak} дн.</b>\n"
         f"🏅 Лучшая серия: <b>{stats['best_streak']} дн.</b>\n\n"
-        f"📈 <b>Активность: {period_start} — {period_end}</b>\n\n"
-        f"{calendar}\n\n"
+        f"📈 Активность по {period_end}\n"
         f"🟩 выполнено    ⬜ не выполнено\n\n"
         f"🎯 <b>По навыкам:</b>\n{skills_text}"
     )
 
-    await message.answer(text, parse_mode="HTML")
+    try:
+        photo = render_calendar(done_dates, weeks=8)
+        await message.answer_photo(
+            BufferedInputFile(photo.getvalue(), filename="calendar.png"),
+            caption=caption,
+            parse_mode="HTML",
+        )
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"Ошибка рендера: {e}")
+        await message.answer(caption, parse_mode="HTML")
 
+   
 # ============ /help ============
 
 @router.message(Command("help"))
