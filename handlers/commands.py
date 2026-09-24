@@ -723,6 +723,10 @@ async def process_feedback(message: Message, state: FSMContext) -> None:
 @router.message(Command("admin_feedback"))
 async def cmd_admin_feedback(message: Message) -> None:
     """Показывает последние 20 сообщений обратной связи."""
+    import logging
+    logging.getLogger(__name__).info(
+    f"ADMIN_FEEDBACK CALLED: user_id={message.from_user.id}, ADMIN_ID={ADMIN_ID}"
+    )
     if message.from_user.id != ADMIN_ID:
         return
 
