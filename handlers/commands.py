@@ -699,35 +699,51 @@ async def cmd_feedback(message: Message, state: FSMContext) -> None:
 
 
 @router.message(FeedbackStates.waiting_message, ~F.text.startswith("/"))
-async def process_feedback(message: Message, state: FSMContext, bot) -> None:
-    """Пересылает сообщение пользователя админу."""
+async def process_feedback(message: Message, state: FSMContext) -> None:
+    """Сохраняет сообщение в БД и подтверждает пользователю."""
+    from core import save_feedback
+
     user = message.from_user
     text = message.text.strip()[:2000]
-
-    # Шлём админу
-    admin_text = (
-        f"📬 <b>Новое сообщение от пользователя</b>\n\n"
-        f"👤 Имя: {user.first_name or '—'}\n"
-        f"🆔 ID: <code>{user.id}</code>\n"
-        f"📛 Username: @{user.username}" if user.username else f"📛 Username: —\n\n"
-        f"💬 <b>Сообщение:</b>\n{text}"
-    )
-
-    # Собираем корректно
-    admin_text = (
-        f"📬 <b>Новое сообщение от пользователя</b>\n\n"
-        f"👤 Имя: {user.first_name or '—'}\n"
-        f"🆔 ID: <code>{user.id}</code>\n"
-        f"📛 Username: @{user.username if user.username else '—'}\n\n"
-        f"💬 <b>Сообщение:</b>\n{text}"
-    )
+    username = f"@{user.username}" if user.username else "—"
 
     try:
-        await bot.send_message(ADMIN_ID, admin_text, parse_mode="HTML")
-        await message.answer("✅ Спасибо! Передал разработчику. Обратная связь очень помогает 💙")
+        await save_feedback(user.id, username, text)
+        await message.answer(
+            "✅ Спасибо! Сообщение сохранено. Обратная связь очень помогает 💙"
+        )
     except Exception as e:
-        await message.answer("⚠️ Не получилось отправить. Попробуй позже.")
+        await message.answer("⚠️ Не получилось сохранить. Попробуй позже.")
         import logging
         logging.getLogger(__name__).error(f"Ошибка feedback: {e}")
 
     await state.clear()
+    # ============ ПРОСМОТР ФИДБЕКА ============
+
+@router.message(Command("admin_feedback"))
+async def cmd_admin_feedback(message: Message) -> None:
+    """Показывает последние 20 сообщений обратной связи."""
+    if message.from_user.id != ADMIN_ID:
+        return
+
+    from core import get_all_feedback
+    items = await get_all_feedback(limit=20)
+
+    if not items:
+        await message.answer("📭 Пока нет сообщений обратной связи.")
+        return
+
+    lines = ["📬 <b>Обратная связь (последние 20):</b>\n"]
+    for it in items:
+        lines.append(
+            f"<b>#{it['id']}</b> — {it['username']} "
+            f"(<code>{it['user_id']}</code>)\n"
+            f"🕐 {it['created_at']}\n"
+            f"💬 {it['text']}\n"
+        )
+
+    # Telegram: лимит 4096 символов — если больше, разбиваем
+    text = "\n".join(lines)
+    if len(text) > 4000:
+        text = text[:4000] + "\n\n…(сокращено)"
+    await message.answer(text, parse_mode="HTML")

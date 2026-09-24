@@ -111,7 +111,15 @@ async def init_db() -> None:
         await db.execute("ALTER TABLE users ADD COLUMN goal TEXT")
     except Exception:
         pass
-
+    await db.execute("""
+        CREATE TABLE IF NOT EXISTS feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            username TEXT,
+            text TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     await db.commit()
     await _migrate_user_skills()
 
@@ -675,3 +683,24 @@ async def get_admin_metrics() -> dict:
         "goals": goals,
         "top_skills": top_skills,
     }
+# ============ ОБРАТНАЯ СВЯЗЬ ============
+
+async def save_feedback(user_id: int, username: str, text: str) -> None:
+    """Сохраняет обратную связь от пользователя."""
+    db = await get_db()
+    await db.execute(
+        "INSERT INTO feedback (user_id, username, text) VALUES (?, ?, ?)",
+        (user_id, username, text)
+    )
+    await db.commit()
+
+
+async def get_all_feedback(limit: int = 20) -> list[dict]:
+    """Возвращает последние сообщения обратной связи."""
+    db = await get_db()
+    async with db.execute(
+        "SELECT * FROM feedback ORDER BY id DESC LIMIT ?",
+        (limit,)
+    ) as cur:
+        rows = await cur.fetchall()
+    return [dict(r) for r in rows]
