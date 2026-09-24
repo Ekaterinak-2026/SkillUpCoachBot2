@@ -578,8 +578,10 @@ ADMIN_ID = 810492439
 @router.message(Command("admin_stats"))
 async def cmd_admin_stats(message: Message) -> None:
     """Показывает метрики бота. Доступно только админу."""
+    import logging
+    logging.getLogger(__name__).info(f"ADMIN_STATS CALLED: user_id={message.from_user.id}, ADMIN_ID={ADMIN_ID}")
     if message.from_user.id != ADMIN_ID:
-        return  # тихо игнорируем всех остальных
+        return# тихо игнорируем всех остальных
 
     from core import get_admin_metrics
     metrics = await get_admin_metrics()
