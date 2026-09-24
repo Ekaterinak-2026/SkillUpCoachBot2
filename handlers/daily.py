@@ -120,11 +120,13 @@ async def process_morning_step(callback: CallbackQuery, state: FSMContext) -> No
             for sid_str, st in chosen.items():
                 await save_daily_plan_for_skill(user_id, int(sid_str), st)
 
-            lines = ["📋 План на сегодня:", ""]
-            for s in skills:
-                lines.append(f"✅ {s['name']} — {chosen[str(s['id'])]}")
-            lines.append("")
-            lines.append("Поехали! 🚀")
+        lines = ["📋 План на сегодня:", ""]
+        for s in skills:
+            step_type_chosen = chosen.get(str(s["id"]))
+            if step_type_chosen:
+                lines.append(f"✅ {s['name']} — {step_type_chosen}")
+            else:
+                lines.append(f"⚠️ {s['name']} — шаг не выбран")
 
         # Определяем, уже позже вечернего чекапа пользователя?
         user = await get_user(user_id)
