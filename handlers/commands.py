@@ -722,11 +722,7 @@ async def process_feedback(message: Message, state: FSMContext) -> None:
 
 @router.message(Command("admin_feedback"))
 async def cmd_admin_feedback(message: Message) -> None:
-    """Показывает последние 20 сообщений обратной связи."""
-    import logging
-    logging.getLogger(__name__).info(
-    f"ADMIN_FEEDBACK CALLED: user_id={message.from_user.id}, ADMIN_ID={ADMIN_ID}"
-    )
+    """Показывает последние сообщения обратной связи."""
     if message.from_user.id != ADMIN_ID:
         return
 
@@ -737,17 +733,15 @@ async def cmd_admin_feedback(message: Message) -> None:
         await message.answer("📭 Пока нет сообщений обратной связи.")
         return
 
-    lines = ["📬 <b>Обратная связь (последние 20):</b>\n"]
+    # Простой текстовый формат без HTML
+    lines = [f"📬 Фидбек (последние {len(items)}):\n"]
     for it in items:
         lines.append(
-            f"<b>#{it['id']}</b> — {it['username']} "
-            f"(<code>{it['user_id']}</code>)\n"
-            f"🕐 {it['created_at']}\n"
-            f"💬 {it['text']}\n"
+            f"#{it['id']} | {it['username']} | {it['created_at']}\n"
+            f"{it['text']}\n"
         )
-
-    # Telegram: лимит 4096 символов — если больше, разбиваем
     text = "\n".join(lines)
     if len(text) > 4000:
-        text = text[:4000] + "\n\n…(сокращено)"
-    await message.answer(text, parse_mode="HTML")
+        text = text[:4000] + "\n\n...(обрезано)"
+
+    await message.answer(text)
