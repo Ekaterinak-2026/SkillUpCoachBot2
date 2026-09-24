@@ -681,6 +681,12 @@ async def cb_admin_stats_refresh(callback: CallbackQuery) -> None:
 @router.message(Command("feedback"))
 async def cmd_feedback(message: Message, state: FSMContext) -> None:
     """Запрашивает у пользователя текст обратной связи."""
+    import logging
+    logging.getLogger(__name__).info(
+        f"FEEDBACK_START: user_id={message.from_user.id}, "
+        f"username=@{message.from_user.username}, "
+        f"ADMIN_ID={ADMIN_ID}"
+    )
     await state.set_state(FeedbackStates.waiting_message)
     await message.answer(
         "💬 Напиши своё сообщение — я передам его разработчику.\n\n"
