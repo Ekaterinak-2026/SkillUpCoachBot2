@@ -609,3 +609,69 @@ async def get_all_today_plans(user_id: int) -> list[dict]:
         (status, user_id, skill_id, today)
     )
     await db.commit()
+
+    # ============ АДМИН-МЕТРИКИ ============
+
+async def get_admin_metrics() -> dict:
+    """Собирает все метрики бота для админ-панели."""
+    db = await get_db()
+
+    # Всего пользователей
+    async with db.execute("SELECT COUNT(*) FROM users") as cur:
+        total_users = (await cur.fetchone())[0]
+
+    # Прошли онбординг (есть хотя бы один навык)
+    async with db.execute(
+        "SELECT COUNT(*) FROM users WHERE skill IS NOT NULL"
+    ) as cur:
+        activated = (await cur.fetchone())[0]
+
+    # Активные за 7 дней
+    week_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+    async with db.execute(
+        "SELECT COUNT(DISTINCT user_id) FROM daily_steps "
+        "WHERE date >= ? AND status = 'выполнен'",
+        (week_ago,)
+    ) as cur:
+        active_7 = (await cur.fetchone())[0]
+
+    # Активные за 30 дней
+    month_ago = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+    async with db.execute(
+        "SELECT COUNT(DISTINCT user_id) FROM daily_steps "
+        "WHERE date >= ? AND status = 'выполнен'",
+        (month_ago,)
+    ) as cur:
+        active_30 = (await cur.fetchone())[0]
+
+    # Средняя серия
+    async with db.execute(
+        "SELECT AVG(streak) FROM users WHERE streak > 0"
+    ) as cur:
+        avg_streak_row = await cur.fetchone()
+        avg_streak = round(avg_streak_row[0] or 0, 1)
+
+    # Распределение по целям
+    async with db.execute(
+        "SELECT goal, COUNT(*) FROM users "
+        "WHERE goal IS NOT NULL GROUP BY goal ORDER BY COUNT(*) DESC"
+    ) as cur:
+        goals = [(r[0], r[1]) for r in await cur.fetchall()]
+
+    # Топ-3 навыка
+    async with db.execute(
+        "SELECT name, COUNT(*) as cnt FROM skills "
+        "WHERE status = 'active' "
+        "GROUP BY LOWER(name) ORDER BY cnt DESC LIMIT 3"
+    ) as cur:
+        top_skills = [(r[0], r[1]) for r in await cur.fetchall()]
+
+    return {
+        "total_users": total_users,
+        "activated": activated,
+        "active_7": active_7,
+        "active_30": active_30,
+        "avg_streak": avg_streak,
+        "goals": goals,
+        "top_skills": top_skills,
+    }

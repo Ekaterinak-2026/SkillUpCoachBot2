@@ -48,6 +48,7 @@ from keyboards import (
     archive_choose_keyboard,
     restore_choose_keyboard,
     archive_confirm_keyboard,
+    admin_stats_keyboard,
 )
 import texts
 
@@ -569,3 +570,102 @@ async def cb_skill_restore(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.message.edit_text(texts.SKILL_RESTORED_OK.format(skill=skill["name"]))
     await _show_skills_menu(callback.message, user_id, edit=False)
     await callback.answer()
+    # ============ АДМИН-СТАТИСТИКА ============
+
+ADMIN_ID = 810492439
+
+
+@router.message(Command("admin_stats"))
+async def cmd_admin_stats(message: Message) -> None:
+    """Показывает метрики бота. Доступно только админу."""
+    if message.from_user.id != ADMIN_ID:
+        return  # тихо игнорируем всех остальных
+
+    from core import get_admin_metrics
+    metrics = await get_admin_metrics()
+
+    total = metrics["total_users"]
+    activated = metrics["activated"]
+    activation_pct = round(activated / total * 100) if total > 0 else 0
+
+    # Распределение по целям
+    goal_labels = {
+        "start_it": "Только начинаю в IT",
+        "interview": "Готовлюсь к собесу",
+        "upgrade": "Хочу поднять грейд",
+        "expertise": "Углубляю экспертизу",
+    }
+    goals_text = "\n".join(
+        f"• {goal_labels.get(g, g)}: {c}"
+        for g, c in metrics["goals"]
+    ) or "— пока нет данных"
+
+    # Топ навыков
+    skills_text = "\n".join(
+        f"• {name} — {cnt}"
+        for name, cnt in metrics["top_skills"]
+    ) or "— пока нет данных"
+
+    text = (
+        "📊 <b>Метрики SkillUp Coach</b>\n\n"
+        f"👥 Всего пользователей: <b>{total}</b>\n"
+        f"✅ Прошли онбординг: <b>{activated}</b> ({activation_pct}%)\n"
+        f"🔥 Активных за 7 дней: <b>{metrics['active_7']}</b>\n"
+        f"🔥 Активных за 30 дней: <b>{metrics['active_30']}</b>\n"
+        f"📈 Средняя серия: <b>{metrics['avg_streak']} дн.</b>\n\n"
+        f"🎯 <b>Распределение по целям:</b>\n{goals_text}\n\n"
+        f"📚 <b>Топ-3 навыка:</b>\n{skills_text}"
+    )
+
+    await message.answer(
+        text,
+        parse_mode="HTML",
+        reply_markup=admin_stats_keyboard()
+    )
+@router.callback_query(F.data == "admin_stats:refresh")
+async def cb_admin_stats_refresh(callback: CallbackQuery) -> None:
+    """Обновляет метрики по кнопке."""
+    if callback.from_user.id != ADMIN_ID:
+        await callback.answer()
+        return
+
+    from core import get_admin_metrics
+    metrics = await get_admin_metrics()
+
+    total = metrics["total_users"]
+    activated = metrics["activated"]
+    activation_pct = round(activated / total * 100) if total > 0 else 0
+
+    goal_labels = {
+        "start_it": "Только начинаю в IT",
+        "interview": "Готовлюсь к собесу",
+        "upgrade": "Хочу поднять грейд",
+        "expertise": "Углубляю экспертизу",
+    }
+    goals_text = "\n".join(
+        f"• {goal_labels.get(g, g)}: {c}"
+        for g, c in metrics["goals"]
+    ) or "— пока нет данных"
+
+    skills_text = "\n".join(
+        f"• {name} — {cnt}"
+        for name, cnt in metrics["top_skills"]
+    ) or "— пока нет данных"
+
+    text = (
+        "📊 <b>Метрики SkillUp Coach</b>\n\n"
+        f"👥 Всего пользователей: <b>{total}</b>\n"
+        f"✅ Прошли онбординг: <b>{activated}</b> ({activation_pct}%)\n"
+        f"🔥 Активных за 7 дней: <b>{metrics['active_7']}</b>\n"
+        f"🔥 Активных за 30 дней: <b>{metrics['active_30']}</b>\n"
+        f"📈 Средняя серия: <b>{metrics['avg_streak']} дн.</b>\n\n"
+        f"🎯 <b>Распределение по целям:</b>\n{goals_text}\n\n"
+        f"📚 <b>Топ-3 навыка:</b>\n{skills_text}"
+    )
+
+    await callback.message.edit_text(
+        text,
+        parse_mode="HTML",
+        reply_markup=admin_stats_keyboard()
+    )
+    await callback.answer("Обновлено")

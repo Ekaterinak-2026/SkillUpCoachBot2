@@ -281,3 +281,11 @@ def goals_keyboard() -> InlineKeyboardMarkup:
 def skills_keyboard() -> InlineKeyboardMarkup:
     """Старая функция — оставлена для совместимости с commands.py."""
     return skills_keyboard_beginner()
+# ============ АДМИН-СТАТИСТИКА ============
+
+def admin_stats_keyboard() -> InlineKeyboardMarkup:
+    """Кнопка обновления админ-статистики."""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🔄 Обновить", callback_data="admin_stats:refresh")
+    builder.adjust(1)
+    return builder.as_markup()
