@@ -8,7 +8,7 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
-from core import get_user, get_week_stats
+from core import get_user, get_week_stats, get_week_stats_by_skill
 import texts
 
 router = Router()
@@ -25,19 +25,26 @@ async def cmd_digest(message: Message) -> None:
         return
 
     stats = await get_week_stats(user_id)
+    skill_stats = await get_week_stats_by_skill(user_id)
 
-    # Формируем текст дайджеста
+    max_total = len(skill_stats) * 7
+    if skill_stats:
+        skills_text = "\n".join([
+            f"• {s['name']} — {s['done']}/7 | {s['favorite_type']}"
+            for s in skill_stats
+        ])
+    else:
+        skills_text = "— пока нет активных навыков"
+
     text = texts.DIGEST_HEADER.format(name=user.get("username") or "друг")
     text += texts.DIGEST_BODY.format(
-        skill=user["skill"],
-        done=stats["done_count"],
+        done_total=stats["done_count"],
+        max_total=max_total,
         best_streak=user["best_streak"],
-        favorite_type=stats["favorite_type"],
-        favorite_count=stats["favorite_count"],
-        total=user["total_success"]
+        total=user["total_success"],
+        skills_text=skills_text,
     )
 
-    # Совет
     if user["best_streak"] >= 5:
         text += texts.DIGEST_TIP_LONG_STREAK.format(streak=user["best_streak"])
     elif stats["done_count"] < 3:
