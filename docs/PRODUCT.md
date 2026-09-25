@@ -92,31 +92,44 @@ SkillUp Coach сочетает три подхода:
 
 Ключевое отличие от других трекеров: **фокус на профессиональные навыки**, а не на спорт или чтение.
 
----
+
 ## 🛤 Пользовательский путь
-/start → приветствие + выбор цели (4 сегмента)
-↓
 
-Под цель → динамический набор навыков
-↓
+```mermaid
+flowchart TD
+    A["👋 /start<br/>Приветствие"] --> B["🎯 Выбор цели<br/>4 сегмента"]
+    B --> C["📚 Выбор навыков<br/>1-5 штук под цель"]
+    C --> D["🌍 Настройка<br/>Часовой пояс + время"]
+    D --> E{"🔄 Ежедневный цикл"}
 
-Выбор 1–5 навыков
-↓
+    E -->|☀️ 09:00| F["Какой шаг сегодня?<br/>теория / практика / общение / рефлексия"]
+    F --> G["🌙 20:00<br/>Чекап: получилось?"]
+    G -->|✅ Да| H["⭐ Прогресс<br/>серия +1, звезда +1"]
+    G -->|❌ Нет| I["💙 Поддержка<br/>серия прервана"]
+    G -->|⏳ Перенесу| J["⏳ Перенос<br/>на завтра"]
 
-Настройка часового пояса и времени уведомлений
-↓
+    H --> E
+    I --> E
+    J --> E
 
-ЕЖЕДНЕВНЫЙ ЦИКЛ:
-☀️ 09:00 — «Какой шаг сделаешь?»
-(Теория / Практика / Общение / Рефлексия)
-🌙 20:00 — «Получилось?»
-(✅ Да / ❌ Нет / ⏳ Перенесу)
-↓
+    H --> K["📊 Аналитика<br/>/stats, /digest"]
 
-Прогресс растёт: серия, звёзды, календарь активности
-↓
+    E -->|2+ дня паузы| L["💬 Nudge<br/>13:00 — напоминание"]
+    L --> E
 
-Раз в неделю — дайджест с аналитикой
+    style A fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#000
+    style B fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#000
+    style C fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#000
+    style D fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#000
+    style E fill:#FFF3E0,stroke:#F57C00,stroke-width:3px,color:#000
+    style F fill:#E8F5E9,stroke:#388E3C,stroke-width:2px,color:#000
+    style G fill:#E8F5E9,stroke:#388E3C,stroke-width:2px,color:#000
+    style H fill:#C8E6C9,stroke:#2E7D32,stroke-width:2px,color:#000
+    style I fill:#FFEBEE,stroke:#C62828,stroke-width:2px,color:#000
+    style J fill:#FFF9C4,stroke:#F9A825,stroke-width:2px,color:#000
+    style K fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#000
+    style L fill:#FCE4EC,stroke:#C2185B,stroke-width:2px,color:#000
+```
 
 ### Механика nudge-сообщений (реактивация)
 
