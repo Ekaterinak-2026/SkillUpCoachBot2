@@ -95,40 +95,51 @@ SkillUp Coach сочетает три подхода:
 
 ## 🛤 Пользовательский путь
 
+### 🚀 Онбординг (2 минуты)
+
 ```mermaid
-flowchart TD
-    A["👋 /start<br/>Приветствие"] --> B["🎯 Выбор цели<br/>4 сегмента"]
-    B --> C["📚 Выбор навыков<br/>1-5 штук под цель"]
-    C --> D["🌍 Настройка<br/>Часовой пояс + время"]
-    D --> E{"🔄 Ежедневный цикл"}
+flowchart LR
+    A["👋 /start"] --> B["🎯 Цель"]
+    B --> C["📚 Навыки"]
+    C --> D["🌍 Тайминг"]
+    D --> E["✅ Готово!"]
 
-    E -->|☀️ 09:00| F["Какой шаг сегодня?<br/>теория / практика / общение / рефлексия"]
-    F --> G["🌙 20:00<br/>Чекап: получилось?"]
-    G -->|✅ Да| H["⭐ Прогресс<br/>серия +1, звезда +1"]
-    G -->|❌ Нет| I["💙 Поддержка<br/>серия прервана"]
-    G -->|⏳ Перенесу| J["⏳ Перенос<br/>на завтра"]
+    style A fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    style B fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
+    style C fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
+    style D fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
+    style E fill:#C8E6C9,stroke:#2E7D32,stroke-width:3px
+```
 
-    H --> E
-    I --> E
-    J --> E
+### 🔄 Ежедневный цикл
 
-    H --> K["📊 Аналитика<br/>/stats, /digest"]
+```mermaid
+flowchart LR
+    M["☀️ 09:00<br/>Какой шаг?"] --> P["📝 План<br/>на день"]
+    P --> E["🌙 20:00<br/>Получилось?"]
+    E -->|✅ Да| S["⭐ Серия +1<br/>Звезда +1"]
+    E -->|❌ Нет| F["💙 Поддержка"]
+    E -->|⏳ Перенесу| T["⏳ На завтра"]
 
-    E -->|2+ дня паузы| L["💬 Nudge<br/>13:00 — напоминание"]
-    L --> E
+    style M fill:#FFF9C4,stroke:#F9A825,stroke-width:2px
+    style P fill:#E3F2FD,stroke:#1976D2,stroke-width:2px
+    style E fill:#E8F5E9,stroke:#388E3C,stroke-width:2px
+    style S fill:#C8E6C9,stroke:#2E7D32,stroke-width:3px
+    style F fill:#FFEBEE,stroke:#C62828,stroke-width:2px
+    style T fill:#FFF3E0,stroke:#F57C00,stroke-width:2px
+```
 
-    style A fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#000
-    style B fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#000
-    style C fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#000
-    style D fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#000
-    style E fill:#FFF3E0,stroke:#F57C00,stroke-width:3px,color:#000
-    style F fill:#E8F5E9,stroke:#388E3C,stroke-width:2px,color:#000
-    style G fill:#E8F5E9,stroke:#388E3C,stroke-width:2px,color:#000
-    style H fill:#C8E6C9,stroke:#2E7D32,stroke-width:2px,color:#000
-    style I fill:#FFEBEE,stroke:#C62828,stroke-width:2px,color:#000
-    style J fill:#FFF9C4,stroke:#F9A825,stroke-width:2px,color:#000
-    style K fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#000
-    style L fill:#FCE4EC,stroke:#C2185B,stroke-width:2px,color:#000
+### 📊 Аналитика и поддержка
+
+```mermaid
+flowchart LR
+    A["📊 /stats<br/>Статистика"] 
+    B["📬 /digest<br/>Недельный отчёт"]
+    C["💬 Nudge<br/>13:00 после 2 дней паузы"]
+
+    style A fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px
+    style B fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px
+    style C fill:#FCE4EC,stroke:#C2185B,stroke-width:2px
 ```
 
 ### Механика nudge-сообщений (реактивация)
