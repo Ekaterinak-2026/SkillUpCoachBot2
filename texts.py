@@ -145,6 +145,8 @@ STATS = (
     "⭐ Звёзд собрано: <b>{total_success}</b>\n"
     "🔥 Текущая серия: <b>{current_streak} дн.</b>\n"
     "🏅 Лучшая серия: <b>{best_streak} дн.</b>\n\n"
+    "📈 <b>Активность за 6 недель</b>\n"
+    "{calendar}\n\n"
     "🎯 <b>По навыкам:</b>\n"
     "{skills_text}"
 )

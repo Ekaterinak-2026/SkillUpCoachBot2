@@ -108,11 +108,11 @@ async def cmd_stats(message: Message) -> None:
         for w in range(6):
             day = start_monday + timedelta(weeks=w, days=d)
             if day > today:
-                row += "·"
+                row += "▫"
             elif day.strftime("%Y-%m-%d") in done_dates:
                 row += "█"
             else:
-                row += "·"
+                row += "▫"
         lines.append(row)
     calendar = "<code>" + "\n".join(lines) + "</code>"
 
