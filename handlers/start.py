@@ -296,15 +296,20 @@ async def process_custom_skill(message: Message, state: FSMContext) -> None:
         )
         await state.set_state(Onboarding.adding_more_skills)
         return
+    # Успех — показываем «Хочешь ещё?»
     skills = await get_active_skills(user_id)
     skills_list = ", ".join([s["name"] for s in skills])
 
+    if len(skills) >= MAX_SKILLS:
+        text = texts.SKILL_ADDED_MAX.format(skill=skill, skills_list=skills_list)
+    else:
+        text = texts.SKILL_ADDED.format(skill=skill, skills_list=skills_list)
+
     await message.answer(
-        texts.SKILL_ADDED.format(skill=skill, skills_list=skills_list),
+        text,
         reply_markup=add_more_skills_keyboard(len(skills), MAX_SKILLS)
     )
     await state.set_state(Onboarding.adding_more_skills)
-
 
 # ============ НАСТРОЙКА ВРЕМЕНИ ============
 
