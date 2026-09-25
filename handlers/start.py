@@ -260,13 +260,18 @@ async def process_skill_choice(callback: CallbackQuery, state: FSMContext) -> No
     skills = await get_active_skills(user_id)
     skills_list = ", ".join([s["name"] for s in skills])
 
+    if len(skills) >= MAX_SKILLS:
+        text = texts.SKILL_ADDED_MAX.format(skill=skill, skills_list=skills_list)
+    else:
+        text = texts.SKILL_ADDED.format(skill=skill, skills_list=skills_list)
+
     await callback.message.edit_text(
-        texts.SKILL_ADDED.format(skill=skill, skills_list=skills_list),
+        text,
         reply_markup=add_more_skills_keyboard(len(skills), MAX_SKILLS)
     )
     await state.set_state(Onboarding.adding_more_skills)
     await callback.answer()
-
+    
 @router.message(Onboarding.entering_custom_skill, ~F.text.startswith("/"))
 async def process_custom_skill(message: Message, state: FSMContext) -> None:
     """Пользователь ввёл свой навык текстом."""
