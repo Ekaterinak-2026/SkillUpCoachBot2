@@ -406,12 +406,14 @@ async def get_current_streak(user_id: int) -> int:
 
 
 async def get_activity_dates(user_id: int, days: int = 56) -> set:
-    """Множество дат (YYYY-MM-DD) с выполненными шагами за последние N дней."""
+    """Множество дат с выполненными шагами, только по активным навыкам."""
     start = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
     db = await get_db()
     async with db.execute(
-        "SELECT DISTINCT date FROM daily_steps "
-        "WHERE user_id = ? AND status = 'выполнен' AND date >= ?",
+        "SELECT DISTINCT ds.date FROM daily_steps ds "
+        "JOIN skills s ON ds.skill_id = s.id "
+        "WHERE ds.user_id = ? AND ds.status = 'выполнен' "
+        "AND ds.date >= ? AND s.status = 'active'",
         (user_id, start)
     ) as cur:
         rows = await cur.fetchall()
