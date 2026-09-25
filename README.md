@@ -20,31 +20,27 @@
 
 | Приветствие | Выбор цели | Выбор навыков |
 |---|---|---|
-| ![welcome](docs/01_welcome.png) | ![goals](docs/02_goals.png) | ![skills](docs/03_skills.png) |
+| <img src="docs/01_welcome.png" width="250"/> | <img src="docs/02_goals.png" width="250"/> | <img src="docs/03_skills.png" width="250"/> |
 
 | Добавление навыка | План на день |
 |---|---|
-| ![add](docs/03b_add_skill.png) | ![plan](docs/04_plan.png) |
+| <img src="docs/03b_add_skill.png" width="250"/> | <img src="docs/04_plan.png" width="250"/> |
 
 ### 🔄 Ежедневный цикл
 
-| Утренний вопрос | Справка `/help` | Обратная связь |
+| Утренний вопрос | Вечерний чекап |
+|---|---|
+| <img src="docs/05_morning.png" width="250"/> | *Скрин появится вечером* |
+
+### ✨ Нативные фишки и поддержка
+
+| Меню команд | Справка `/help` | Обратная связь |
 |---|---|---|
-| ![morning](docs/05_morning.png) | ![help](docs/06_help.png) | ![feedback](docs/07_feedback.png) |
+| <img src="docs/13_commands_menu.png" width="250"/> | <img src="docs/06_help.png" width="250"/> | <img src="docs/07_feedback.png" width="250"/> |
 
-### 📊 Статистика и настройки
-
-| Статистика `/stats` | Настройки `/settings` | Управление навыками |
-|---|---|---|
-| ![stats](docs/10_stats.png) | ![settings](docs/08_settings.png) | ![skills_menu](docs/11_skills_menu.png) |
-
-### ✨ Нативные фишки
-
-| Меню команд | Сброс профиля | Бот помнит пользователя |
-|---|---|---|
-| ![menu](docs/13_commands_menu.png) | ![reset](docs/09_reset.png) | ![already](docs/12_already_registered.png) |
-
----
+| Сброс профиля | Бот помнит пользователя |
+|---|---|
+| <img src="docs/09_reset.png" width="250"/> | <img src="docs/12_already_registered.png" width="250"/> |
 
 ## ✨ Что умеет
 
@@ -76,42 +72,28 @@
 
 ---
 
-## 🚀 Быстрый старт (локально)
+## 🚀 Запустить локально
 
-### 1. Клонируй репозиторий
 ```bash
 git clone https://github.com/EkaterinaK-2026/SkillUpCoachBot2.git
 cd SkillUpCoachBot2
-```
-
-### 2. Создай виртуальное окружение
-```bash
-python -m venv venv
-venv\Scripts\activate          # Windows
-# source venv/bin/activate     # macOS / Linux
-```
-
-### 3. Установи зависимости
-```bash
+python -m venv venv && venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 4. Настрой переменные окружения
-Создай файл `.env` в корне:
+Создай файл `.env` в корне с токеном от [@BotFather](https://t.me/BotFather):
+
 ```env
 BOT_TOKEN=your_telegram_bot_token
 ```
 
-Токен получи у [@BotFather](https://t.me/BotFather) → `/newbot`.
+Затем запусти:
 
-### 5. Запусти
 ```bash
 python main.py
 ```
 
-Бот начнёт polling. Открой своего бота в Telegram и напиши `/start`.
-
----
+Бот начнёт polling — открой [@SkillUpCoachBot](https://t.me/SkillUpCoachBot) и напиши `/start`.
 
 ## 📂 Структура проекта
 
