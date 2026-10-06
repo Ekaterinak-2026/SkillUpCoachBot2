@@ -17,7 +17,7 @@
 - 🔥 40% retention D7
 - 📈 4.0 дня средняя серия
 
-![Метрики](docs/admin_stats.png)
+<img src="docs/admin_stats.png" width="400"/>
 
 ## 🎓 Что это такое
 
